@@ -1,0 +1,479 @@
+/**
+ * API 类型定义文件
+ * 所有接口的请求参数、响应数据和实体模型必须在此定义
+ */
+
+// ==================== 通用响应模型 ====================
+
+/**
+ * 统一响应结构
+ */
+export interface Result<T = any> {
+  code: number
+  message: string
+  data: T
+}
+
+// ==================== 认证模块 (Auth) ====================
+
+/**
+ * 注册请求参数
+ */
+export interface RegisterParams {
+  username: string
+  password: string
+}
+
+/**
+ * 登录请求参数
+ */
+export interface LoginParams {
+  username: string
+  password: string
+}
+
+/**
+ * Token 响应数据
+ */
+export interface TokenData {
+  access_token: string
+  refresh_token: string
+  token_type: string
+}
+
+/**
+ * 刷新令牌请求参数
+ */
+export interface RefreshTokenParams {
+  refresh_token: string
+}
+
+/**
+ * 用户注册响应数据
+ */
+export interface RegisterData {
+  id: number
+  username: string
+  name: string
+  photo_url: string
+  exp: number
+  level: string
+}
+
+// ==================== 用户模块 (User) ====================
+
+/**
+ * 用户基本信息
+ */
+export interface UserInfo {
+  id?: number
+  username: string
+  name: string
+  photo_url: string
+  exp: number
+  level: string
+}
+
+/**
+ * 用户主页帖子信息
+ */
+export interface UserPoem {
+  id: string
+  title: string
+  publish_time: number
+  like_count: number
+  collect_count: number
+}
+
+/**
+ * 用户主页信息
+ */
+export interface UserProfileData extends UserInfo {
+  poems: UserPoem[]
+  poem_count: number
+}
+
+/**
+ * 修改网名请求参数
+ */
+export interface UpdateNameParams {
+  new_name: string
+}
+
+/**
+ * 修改网名响应数据
+ */
+export interface UpdateNameData {
+  name: string
+}
+
+/**
+ * 上传头像响应数据
+ */
+export interface UploadAvatarData {
+  photo_url: string
+}
+
+/**
+ * 修改密码请求参数
+ */
+export interface UpdatePasswordParams {
+  old_password: string
+  new_password: string
+}
+
+// ==================== 诗词模块 (Poem) ====================
+
+/**
+ * 诗词基本信息
+ */
+export interface PoemInfo {
+  id: number
+  title: string
+  author: string
+  dynasty?: string
+  tags: string[]
+  paragraphs?: string[]
+}
+
+/**
+ * 分页查询请求参数
+ */
+export interface PageParams {
+  page_size?: number
+  page_num?: number
+}
+
+/**
+ * 分页响应数据
+ */
+export interface PageData<T = any> {
+  list: T[]
+  total: number
+  page_size: number
+  page_num: number
+  total_pages: number
+}
+
+/**
+ * 诗词分页查询响应
+ */
+export type PoemPageData = PageData<PoemInfo>
+
+/**
+ * 诗词列表响应数据
+ */
+export interface PoemListData {
+  list: PoemInfo[]
+  total: number
+}
+
+/**
+ * 标签查询请求参数
+ */
+export interface TagsQueryParams {
+  tags: string[]
+}
+
+/**
+ * 作者查询请求参数
+ */
+export interface AuthorQueryParams {
+  author: string
+}
+
+/**
+ * 关键词查询请求参数
+ */
+export interface KeywordSearchParams {
+  keyword: string
+}
+
+/**
+ * 对诗请求参数
+ */
+export interface PoemRespondParams {
+  user_sentence: string
+}
+
+/**
+ * 对诗响应数据
+ */
+export interface PoemRespondData {
+  user_input: string
+  matched_clauses: string[]
+  next_sentence: string
+  poem_title: string
+  poem_author: string
+}
+
+/**
+ * 诗词详情
+ */
+export interface PoemDetail {
+  id: number
+  title: string
+  author: string
+  tags: string[]
+  paragraphs: string[]
+  strains?: string
+  notes?: string
+  [key: string]: any
+}
+
+/**
+ * 每日一首响应数据
+ */
+export interface DailyPoemData {
+  poem: PoemDetail
+  date: string
+}
+
+// ==================== 论坛模块 (Forum) ====================
+
+/**
+ * 帖子基本信息
+ */
+export interface ForumPost {
+  id: string
+  user_id: number
+  user_name: string
+  user_photo: string
+  user_level: string
+  title: string
+  content: string
+  tags: string[]
+  publish_time: number
+  like_count: number
+  collect_count: number
+  comment_count: number
+  is_liked?: boolean
+  is_collected?: boolean
+}
+
+/**
+ * 论坛分页查询响应
+ */
+export type ForumPageData = PageData<ForumPost>
+
+/**
+ * 发布帖子请求参数
+ */
+export interface CreatePostParams {
+  title: string
+  content: string
+  tags: string[]
+}
+
+/**
+ * 发布帖子响应数据
+ */
+export interface CreatePostData {
+  id: string
+  title: string
+  publish_time: number
+}
+
+/**
+ * 帖子详情
+ */
+export interface PostDetail extends ForumPost {
+  comments: PostComment[]
+}
+
+/**
+ * 评论信息
+ */
+export interface PostComment {
+  id: string
+  user_id: number
+  user_name: string
+  user_photo: string
+  user_level: string
+  content: string
+  publish_time: number
+  like_count: number
+  is_liked?: boolean
+}
+
+/**
+ * 发布评论请求参数
+ */
+export interface CreateCommentParams {
+  post_id: string
+  content: string
+}
+
+/**
+ * 发布评论响应数据
+ */
+export interface CreateCommentData {
+  id: string
+  content: string
+  publish_time: number
+}
+
+/**
+ * 点赞请求参数
+ */
+export interface LikeParams {
+  target_id: string
+  target_type: 'post' | 'comment'
+}
+
+/**
+ * 收藏请求参数
+ */
+export interface CollectParams {
+  post_id: string
+}
+
+/**
+ * 热力榜响应数据
+ */
+export interface HotRankData {
+  list: ForumPost[]
+  total: number
+}
+
+// ==================== 收藏夹模块 (Favorite) ====================
+
+/**
+ * 收藏项信息
+ */
+export interface FavoriteItem {
+  id: string
+  post_id: string
+  title: string
+  content: string
+  author_name: string
+  author_photo: string
+  tags: string[]
+  collect_time: number
+  like_count: number
+  comment_count: number
+}
+
+/**
+ * 收藏夹列表响应
+ */
+export interface FavoriteListData {
+  list: FavoriteItem[]
+  total: number
+}
+
+/**
+ * 收藏夹分页查询响应
+ */
+export type FavoritePageData = PageData<FavoriteItem>
+
+/**
+ * 取消收藏请求参数
+ */
+export interface UnCollectParams {
+  post_id: string
+}
+
+/**
+ * 收藏夹搜索请求参数
+ */
+export interface FavoriteSearchParams extends KeywordSearchParams, PageParams {}
+
+// ==================== AI 会话模块 (AI Session & Chat) ====================
+
+/**
+ * AI 会话信息
+ */
+export interface AISession {
+  id: string
+  title: string
+  create_time: number
+  update_time: number
+  message_count: number
+}
+
+/**
+ * AI 会话列表响应
+ */
+export interface AISessionListData {
+  list: AISession[]
+  total: number
+}
+
+/**
+ * 创建会话请求参数
+ */
+export interface CreateSessionParams {
+  title?: string
+}
+
+/**
+ * 创建会话响应数据
+ */
+export interface CreateSessionData {
+  id: string
+  title: string
+  create_time: number
+}
+
+/**
+ * 重命名会话请求参数
+ */
+export interface RenameSessionParams {
+  session_id: string
+  title: string
+}
+
+/**
+ * 删除会话请求参数
+ */
+export interface DeleteSessionParams {
+  session_id: string
+}
+
+/**
+ * 聊天消息
+ */
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: number
+}
+
+/**
+ * 聊天历史响应
+ */
+export interface ChatHistoryData {
+  session_id: string
+  messages: ChatMessage[]
+  total: number
+}
+
+/**
+ * 发送消息请求参数
+ */
+export interface SendMessageParams {
+  session_id: string
+  content: string
+  stream?: boolean
+}
+
+/**
+ * 发送消息响应（非流式）
+ */
+export interface SendMessageData {
+  message_id: string
+  content: string
+  timestamp: number
+}
+
+/**
+ * 流式响应数据块
+ */
+export interface StreamChunk {
+  type: 'text' | 'done' | 'error'
+  content?: string
+  message_id?: string
+  error?: string
+}
