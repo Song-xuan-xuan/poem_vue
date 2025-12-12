@@ -81,7 +81,8 @@ export const getDailyPoem = (): Promise<Result<DailyPoemData>> => {
 
 /**
  * 智能解析构造Prompt
+ * @param content - 用户选中的内容（标题/诗句/段落）
  */
-export const getParsePoemPrompt = (keyword: string): Promise<Result<{ prompt: string }>> => {
-  return request.get('/api/poem/parse/prompt', { params: { keyword } })
+export const getParsePoemPrompt = (content: string): Promise<Result<{ prompt: string }>> => {
+  return request.get('/api/poem/parse/prompt', { params: { content } })
 }

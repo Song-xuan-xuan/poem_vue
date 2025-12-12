@@ -227,11 +227,10 @@ const loadMyFavorites = async () => {
   myFavoritesLoading.value = true
   try {
     const res = await getFavorites({
-      page_num: pagination.pageNum,
-      page_size: pagination.pageSize
+      page: pagination.pageNum
     })
     if (res.code === 200) {
-      myFavorites.value = res.data.list || []
+      myFavorites.value = res.data.items || []
       pagination.total = res.data.total || 0
     }
   } catch (error) {
@@ -242,7 +241,7 @@ const loadMyFavorites = async () => {
 }
 
 // 取消收藏
-const handleUnCollect = async (postId: string) => {
+const handleUnCollect = async (collectId: string) => {
   try {
     await ElMessageBox.confirm(
       '确定要取消收藏这篇帖子吗？',
@@ -254,7 +253,7 @@ const handleUnCollect = async (postId: string) => {
       }
     )
 
-    await unCollect({ post_id: postId })
+    await unCollect(collectId)
     ElMessage.success('取消收藏成功')
     
     // 刷新收藏列表
@@ -276,12 +275,10 @@ const handleTabChange = (tabName: string) => {
 }
 
 // 格式化收藏时间
-const formatCollectTime = (timestamp: number) => {
-  const date = new Date(timestamp * 1000)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+const formatCollectTime = (dateStr: string) => {
+  if (!dateStr) return ''
+  // 返回格式：2025-12-07T10:30:00 => 2025-12-07
+  return dateStr.split('T')[0]
 }
 
 // 登出
@@ -407,35 +404,42 @@ onMounted(() => {
           <div v-else class="favorites-list">
             <el-card 
               v-for="item in myFavorites" 
-              :key="item.id"
+              :key="item.collect_id"
               shadow="hover"
               class="favorite-card"
             >
               <div class="card-header">
-                <h3>{{ item.title }}</h3>
+                <h3>{{ item.work_info.title }}</h3>
                 <el-button 
                   type="danger" 
                   size="small" 
                   text
-                  @click.stop="handleUnCollect(item.post_id)"
+                  @click.stop="handleUnCollect(item.collect_id)"
                 >
                   取消收藏
                 </el-button>
               </div>
-              <p class="content-preview">{{ item.content }}</p>
+              <p class="content-preview">{{ item.work_info.content }}</p>
               <div class="favorite-meta">
-                <div class="author-info">
-                  <el-avatar :src="item.author_photo" :size="24" />
-                  <span>{{ item.author_name }}</span>
+                <div class="favorite-tags" v-if="item.work_info.styles && item.work_info.styles.length > 0">
+                  <el-tag 
+                    v-for="style in item.work_info.styles.slice(0, 3)" 
+                    :key="style"
+                    size="small"
+                    type="info"
+                    effect="plain"
+                  >
+                    {{ style }}
+                  </el-tag>
                 </div>
                 <div class="favorite-stats">
                   <span>
                     <el-icon><Star /></el-icon>
-                    {{ item.like_count }}
+                    {{ item.work_info.like_count }}
                   </span>
                   <span>
-                    <el-icon><ChatDotRound /></el-icon>
-                    {{ item.comment_count }}
+                    <el-icon><Collection /></el-icon>
+                    {{ item.work_info.collect_count }}
                   </span>
                   <span class="collect-time">
                     <el-icon><Clock /></el-icon>

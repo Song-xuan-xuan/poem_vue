@@ -29,24 +29,24 @@
       <div v-else class="favorites-grid">
         <el-card
           v-for="item in favorites"
-          :key="item.id"
+          :key="item.collect_id"
           shadow="hover"
           class="favorite-card"
-          @click="goToPost(item.post_id)"
+          @click="goToPost(item.work_info.id)"
         >
           <!-- 卡片头部 -->
           <div class="card-header">
             <div class="card-title-section">
-              <h3 class="card-title">{{ item.title }}</h3>
-              <div class="card-tags" v-if="item.tags && item.tags.length > 0">
+              <h3 class="card-title">{{ item.work_info.title }}</h3>
+              <div class="card-tags" v-if="item.work_info.styles && item.work_info.styles.length > 0">
                 <el-tag
-                  v-for="tag in item.tags.slice(0, 3)"
-                  :key="tag"
+                  v-for="style in item.work_info.styles.slice(0, 3)"
+                  :key="style"
                   size="small"
                   type="info"
                   effect="plain"
                 >
-                  {{ tag }}
+                  {{ style }}
                 </el-tag>
               </div>
             </div>
@@ -55,7 +55,7 @@
               size="small"
               text
               :icon="Delete"
-              @click.stop="handleUnCollect(item.post_id, item.title)"
+              @click.stop="handleUnCollect(item.collect_id, item.work_info.title)"
             >
               取消收藏
             </el-button>
@@ -63,26 +63,19 @@
 
           <!-- 内容预览 -->
           <div class="card-content">
-            <p class="content-preview">{{ item.content }}</p>
+            <p class="content-preview">{{ item.work_info.content }}</p>
           </div>
 
           <!-- 卡片底部 -->
           <div class="card-footer">
-            <div class="author-info">
-              <el-avatar :src="item.author_photo" :size="32">
-                {{ item.author_name.charAt(0) }}
-              </el-avatar>
-              <span class="author-name">{{ item.author_name }}</span>
-            </div>
-
             <div class="card-stats">
               <span class="stat-item">
                 <el-icon><Star /></el-icon>
-                {{ item.like_count }}
+                {{ item.work_info.like_count }}
               </span>
               <span class="stat-item">
-                <el-icon><ChatDotRound /></el-icon>
-                {{ item.comment_count }}
+                <el-icon><Collection /></el-icon>
+                {{ item.work_info.collect_count }}
               </span>
               <span class="collect-time">
                 <el-icon><Clock /></el-icon>
@@ -115,7 +108,7 @@ import { useRouter } from 'vue-router'
 import { Search, Delete, Star, ChatDotRound, Clock } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FavoriteItem } from '@/api/type'
-import { getFavorites, unCollect, searchFavorites } from '@/api/favorite'
+import { getFavorites, unCollect } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -145,10 +138,10 @@ const loadFavorites = async () => {
   loading.value = true
   try {
     const res = await getFavorites({
-      page_num: currentPage.value,
-      page_size: pageSize.value
+      page: currentPage.value,
+      title: searchKeyword.value.trim() || undefined
     })
-    favorites.value = res.data.list || []
+    favorites.value = res.data.items || []
     total.value = res.data.total || 0
   } catch (error: any) {
     ElMessage.error(error.message || '加载收藏列表失败')
@@ -163,35 +156,16 @@ const loadFavorites = async () => {
  * 搜索收藏
  */
 const handleSearch = async () => {
-  if (!searchKeyword.value.trim()) {
-    loadFavorites()
-    return
-  }
-
+  currentPage.value = 1
   searchLoading.value = true
-  loading.value = true
-  try {
-    const res = await searchFavorites({
-      keyword: searchKeyword.value.trim(),
-      page_num: currentPage.value,
-      page_size: pageSize.value
-    })
-    favorites.value = res.data.list || []
-    total.value = res.data.total || 0
-  } catch (error: any) {
-    ElMessage.error(error.message || '搜索失败')
-    favorites.value = []
-    total.value = 0
-  } finally {
-    searchLoading.value = false
-    loading.value = false
-  }
+  await loadFavorites()
+  searchLoading.value = false
 }
 
 /**
  * 取消收藏
  */
-const handleUnCollect = async (postId: string, title: string) => {
+const handleUnCollect = async (collectId: string, title: string) => {
   try {
     await ElMessageBox.confirm(
       `确定要取消收藏《${title}》吗？`,
@@ -203,15 +177,11 @@ const handleUnCollect = async (postId: string, title: string) => {
       }
     )
 
-    await unCollect({ post_id: postId })
+    await unCollect(collectId)
     ElMessage.success('取消收藏成功')
 
     // 刷新列表
-    if (searchKeyword.value.trim()) {
-      await handleSearch()
-    } else {
-      await loadFavorites()
-    }
+    await loadFavorites()
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '取消收藏失败')
@@ -224,11 +194,7 @@ const handleUnCollect = async (postId: string, title: string) => {
  */
 const handlePageChange = (page: number) => {
   currentPage.value = page
-  if (searchKeyword.value.trim()) {
-    handleSearch()
-  } else {
-    loadFavorites()
-  }
+  loadFavorites()
 }
 
 /**
@@ -237,11 +203,7 @@ const handlePageChange = (page: number) => {
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
-  if (searchKeyword.value.trim()) {
-    handleSearch()
-  } else {
-    loadFavorites()
-  }
+  loadFavorites()
 }
 
 /**
@@ -254,8 +216,10 @@ const goToPost = (postId: string) => {
 /**
  * 格式化收藏时间
  */
-const formatCollectTime = (timestamp: number) => {
-  const date = new Date(timestamp * 1000)
+const formatCollectTime = (dateStr: string) => {
+  if (!dateStr) return ''
+  // 解析时间字符串：2025-12-07T10:30:00
+  const date = new Date(dateStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))

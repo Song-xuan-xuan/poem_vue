@@ -182,4 +182,7 @@ export const request = {
   }
 }
 
+// 导出 service 实例（供 Mock 系统使用）
+export { service }
+
 export default service

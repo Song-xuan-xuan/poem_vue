@@ -1,48 +1,49 @@
 import { request } from '@/utils/request'
 import type {
   Result,
-  AISessionListData,
+  SessionItem,
   CreateSessionParams,
-  CreateSessionData,
-  RenameSessionParams,
-  DeleteSessionParams
+  RenameSessionParams
 } from './type'
 
 /**
- * AI 会话管理 API
+ * AI 会话管理 API（对齐 api.md 智能体问答系统）
  */
 
 /**
  * 获取会话列表
+ * @returns 直接返回 SessionItem 数组（注意：没有 data.list 包裹）
+ * GET /api/session/list
  */
-export const getSessionList = (): Promise<Result<AISessionListData>> => {
-  return request.get('/api/ai/sessions')
+export const getSessionList = (): Promise<Result<SessionItem[]>> => {
+  return request.get('/api/session/list')
 }
 
 /**
  * 创建新会话
+ * @param params { session_id: UUID, name: string }
+ * @returns 创建的会话信息
+ * POST /api/session/create
+ * 注意：session_id 必须由前端生成（UUID 格式）
  */
-export const createSession = (params: CreateSessionParams = {}): Promise<Result<CreateSessionData>> => {
-  return request.post('/api/ai/session', params)
+export const createSession = (params: CreateSessionParams): Promise<Result<SessionItem>> => {
+  return request.post('/api/session/create', params)
 }
 
 /**
  * 重命名会话
+ * @param params { session_id: string, name: string }
+ * PUT /api/session/rename
  */
-export const renameSession = (params: RenameSessionParams): Promise<Result<null>> => {
-  return request.put('/api/ai/session/rename', params)
+export const renameSession = (params: RenameSessionParams): Promise<Result<{ session_id: string; new_name: string }>> => {
+  return request.put('/api/session/rename', params)
 }
 
 /**
  * 删除会话
+ * @param sessionId 会话 ID
+ * DELETE /api/session/delete/{session_id}
  */
-export const deleteSession = (params: DeleteSessionParams): Promise<Result<null>> => {
-  return request.delete(`/api/ai/session/${params.session_id}`)
-}
-
-/**
- * 获取会话详情
- */
-export const getSessionDetail = (sessionId: string): Promise<Result<any>> => {
-  return request.get(`/api/ai/session/${sessionId}`)
+export const deleteSession = (sessionId: string): Promise<Result<{ session_id: string }>> => {
+  return request.delete(`/api/session/delete/${sessionId}`)
 }

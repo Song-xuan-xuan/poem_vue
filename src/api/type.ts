@@ -229,10 +229,82 @@ export interface DailyPoemData {
   date: string
 }
 
-// ==================== 论坛模块 (Forum) ====================
+// ==================== Work 模块 (帖子/作品) ====================
 
 /**
- * 帖子基本信息
+ * 帖子列表项（用于主页、搜索等列表）
+ */
+export interface WorkItem {
+  id: string
+  title: string
+  content: string
+  user_id: string
+  publish_time: number
+  like_count: number
+  collect_count: number
+  styles: string[]
+  comments?: WorkComment[]
+  heat_score?: number
+}
+
+/**
+ * 帖子评论
+ */
+export interface WorkComment {
+  comment_id: string
+  user_id: string
+  user_name: string
+  content: string
+  comment_time: number
+}
+
+/**
+ * 帖子详情
+ */
+export interface WorkDetail {
+  id: string
+  title: string
+  content: string
+  user_id: string
+  publish_time: number
+  like_count: number
+  collect_count: number
+  styles: string[]
+  comment_total: number
+  comments: WorkComment[]
+}
+
+/**
+ * 帖子列表分页响应
+ */
+export interface WorkPageData {
+  items: WorkItem[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
+
+/**
+ * 热力榜项
+ */
+export interface HotWorkItem {
+  id: string
+  title: string
+  heat_score: number
+}
+
+/**
+ * 热力榜 Top10 响应
+ */
+export interface HotRankData {
+  top10: HotWorkItem[]
+}
+
+// ==================== 论坛模块 (Forum - 保留兼容) ====================
+
+/**
+ * 帖子基本信息（兼容旧版）
  */
 export interface ForumPost {
   id: string
@@ -252,7 +324,7 @@ export interface ForumPost {
 }
 
 /**
- * 论坛分页查询响应
+ * 论坛分页查询响应（兼容旧版）
  */
 export type ForumPageData = PageData<ForumPost>
 
@@ -322,10 +394,10 @@ export interface LikeParams {
 }
 
 /**
- * 收藏请求参数
+ * 收藏帖子请求参数
  */
 export interface CollectParams {
-  post_id: string
+  poem_id: string
 }
 
 /**
@@ -336,22 +408,23 @@ export interface HotRankData {
   total: number
 }
 
-// ==================== 收藏夹模块 (Favorite) ====================
+// ==================== 收藏夹模块 (collect) ====================
 
 /**
  * 收藏项信息
  */
 export interface FavoriteItem {
-  id: string
-  post_id: string
-  title: string
-  content: string
-  author_name: string
-  author_photo: string
-  tags: string[]
-  collect_time: number
-  like_count: number
-  comment_count: number
+  collect_id: string
+  collect_time: string
+  work_info: {
+    id: string
+    title: string
+    content: string
+    publish_time: string
+    like_count: number
+    collect_count: number
+    styles: string[]
+  }
 }
 
 /**
@@ -365,13 +438,19 @@ export interface FavoriteListData {
 /**
  * 收藏夹分页查询响应
  */
-export type FavoritePageData = PageData<FavoriteItem>
+export interface FavoritePageData {
+  items: FavoriteItem[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
 
 /**
  * 取消收藏请求参数
  */
 export interface UnCollectParams {
-  post_id: string
+  collect_id: string
 }
 
 /**
@@ -382,46 +461,42 @@ export interface FavoriteSearchParams extends KeywordSearchParams, PageParams {}
 // ==================== AI 会话模块 (AI Session & Chat) ====================
 
 /**
- * AI 会话信息
+ * AI 会话项
  */
-export interface AISession {
-  id: string
-  title: string
+export interface SessionItem {
+  session_id: string
+  name: string
   create_time: number
-  update_time: number
-  message_count: number
 }
 
 /**
- * AI 会话列表响应
+ * AI 会话列表响应（直接返回数组）
  */
-export interface AISessionListData {
-  list: AISession[]
-  total: number
-}
+export type SessionListData = SessionItem[]
 
 /**
  * 创建会话请求参数
  */
 export interface CreateSessionParams {
-  title?: string
+  session_id: string
+  name: string
 }
 
 /**
  * 创建会话响应数据
  */
 export interface CreateSessionData {
-  id: string
-  title: string
-  create_time: number
+  session_id: string
+  name: string
 }
 
 /**
  * 重命名会话请求参数
+ * PUT /api/session/rename
  */
 export interface RenameSessionParams {
   session_id: string
-  title: string
+  name: string
 }
 
 /**
@@ -432,7 +507,74 @@ export interface DeleteSessionParams {
 }
 
 /**
- * 聊天消息
+ * QA 问答对
+ */
+export interface QAPair {
+  question_id: string
+  question: string
+  answer: string
+  num_render: number
+  status: 'normal' | 'stopped'
+  timestamp: number
+}
+
+/**
+ * QA 列表响应（直接返回数组）
+ */
+export type QAListData = QAPair[]
+
+/**
+ * QA 详情
+ */
+export interface QADetail extends QAPair {
+  session_id: string
+}
+
+/**
+ * 发送消息请求参数
+ */
+export interface SendMessageParams {
+  session_id: string
+  question: string
+}
+
+/**
+ * 中断对话请求参数
+ */
+export interface StopQAParams {
+  question_id: string
+}
+
+/**
+ * 删除对话请求参数
+ */
+export interface DeleteQAParams {
+  question_id: string
+}
+
+// ==================== 兼容旧版 AI 类型 ====================
+
+/**
+ * AI 会话信息（兼容旧版）
+ */
+export interface AISession {
+  id: string
+  title: string
+  create_time: number
+  update_time: number
+  message_count: number
+}
+
+/**
+ * AI 会话列表响应（兼容旧版）
+ */
+export interface AISessionListData {
+  list: AISession[]
+  total: number
+}
+
+/**
+ * 聊天消息（兼容旧版）
  */
 export interface ChatMessage {
   id: string
@@ -442,7 +584,7 @@ export interface ChatMessage {
 }
 
 /**
- * 聊天历史响应
+ * 聊天历史响应（兼容旧版）
  */
 export interface ChatHistoryData {
   session_id: string
@@ -451,16 +593,7 @@ export interface ChatHistoryData {
 }
 
 /**
- * 发送消息请求参数
- */
-export interface SendMessageParams {
-  session_id: string
-  content: string
-  stream?: boolean
-}
-
-/**
- * 发送消息响应（非流式）
+ * 发送消息响应（非流式，兼容旧版）
  */
 export interface SendMessageData {
   message_id: string

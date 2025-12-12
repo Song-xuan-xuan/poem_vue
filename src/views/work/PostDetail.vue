@@ -10,15 +10,12 @@
           <!-- 帖子头部 -->
           <div class="post-header">
             <div class="user-section">
-              <el-avatar :src="postDetail.user_photo" :size="50">
-                {{ postDetail.user_name.charAt(0) }}
+              <el-avatar :size="50">
+                U
               </el-avatar>
               <div class="user-info">
                 <div class="user-name">
-                  {{ postDetail.user_name }}
-                  <el-tag size="small" type="info" effect="plain">
-                    {{ postDetail.user_level }}
-                  </el-tag>
+                  用户 {{ postDetail.user_id }}
                 </div>
                 <div class="post-time">{{ formatTime(postDetail.publish_time) }}</div>
               </div>
@@ -41,14 +38,14 @@
           <!-- 帖子内容 -->
           <div class="post-content">
             <h1 class="post-title">{{ postDetail.title }}</h1>
-            <div class="post-tags" v-if="postDetail.tags && postDetail.tags.length > 0">
+            <div class="post-tags" v-if="postDetail.styles && postDetail.styles.length > 0">
               <el-tag
-                v-for="tag in postDetail.tags"
-                :key="tag"
+                v-for="style in postDetail.styles"
+                :key="style"
                 type="info"
                 effect="plain"
               >
-                {{ tag }}
+                {{ style }}
               </el-tag>
             </div>
             <div class="post-body">{{ postDetail.content }}</div>
@@ -59,7 +56,7 @@
             <div class="stats">
               <span class="stat-item">
                 <el-icon><ChatDotRound /></el-icon>
-                {{ postDetail.comment_count }} 评论
+                {{ postDetail.comment_total }} 评论
               </span>
             </div>
             <div class="actions">
@@ -87,7 +84,7 @@
         <el-card class="comment-section" shadow="hover">
           <template #header>
             <div class="section-header">
-              <span>评论 ({{ postDetail.comment_count }})</span>
+              <span>评论 ({{ postDetail.comment_total }})</span>
             </div>
           </template>
 
@@ -121,29 +118,18 @@
             />
             <div
               v-for="comment in postDetail.comments"
-              :key="comment.id"
+              :key="comment.comment_id"
               class="comment-item"
             >
-              <el-avatar :src="comment.user_photo" :size="40">
+              <el-avatar :size="40">
                 {{ comment.user_name.charAt(0) }}
               </el-avatar>
               <div class="comment-content">
                 <div class="comment-header">
                   <div class="user-info">
                     <span class="user-name">{{ comment.user_name }}</span>
-                    <el-tag size="small" type="info" effect="plain">
-                      {{ comment.user_level }}
-                    </el-tag>
-                    <span class="comment-time">{{ formatTime(comment.publish_time) }}</span>
+                    <span class="comment-time">{{ formatTime(comment.comment_time) }}</span>
                   </div>
-                  <el-button
-                    text
-                    :type="comment.is_liked ? 'primary' : 'default'"
-                    @click="handleLikeComment(comment)"
-                  >
-                    <el-icon><Star :class="{ filled: comment.is_liked }" /></el-icon>
-                    {{ comment.like_count }}
-                  </el-button>
                 </div>
                 <div class="comment-body">{{ comment.content }}</div>
               </div>
@@ -169,19 +155,19 @@ import {
   Promotion
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { PostDetail, PostComment } from '@/api/type'
-import { getPostDetail, deletePost, createComment } from '@/api/forum'
+import type { WorkDetail } from '@/api/type'
+import { getPostDetail, deletePost, createComment } from '@/api/work'
 import { useLikeAndFavor } from '@/composables/useLikeAndFavor'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const { likePost, likeComment, collectPost } = useLikeAndFavor()
+const { likePost, collectPost } = useLikeAndFavor()
 
-// 帖子详情
+// 帖子详情（扩展类型以包含 UI 状态）
 const loading = ref(false)
-const postDetail = ref<PostDetail | null>(null)
+const postDetail = ref<(WorkDetail & { is_liked?: boolean; is_collected?: boolean }) | null>(null)
 
 // 删除帖子
 const deleteLoading = ref(false)
@@ -193,7 +179,7 @@ const commentLoading = ref(false)
 // 是否是作者
 const isAuthor = computed(() => {
   if (!postDetail.value || !userStore.userInfo) return false
-  return postDetail.value.user_id === userStore.userInfo.id
+  return postDetail.value.user_id === String(userStore.userInfo.id)
 })
 
 /**
@@ -209,7 +195,12 @@ const loadPostDetail = async () => {
   loading.value = true
   try {
     const res = await getPostDetail(postId)
-    postDetail.value = res.data
+    // 初始化 UI 状态字段
+    postDetail.value = {
+      ...res.data.detail,
+      is_liked: false,
+      is_collected: false
+    }
   } catch (error: any) {
     ElMessage.error(error.message || '加载帖子详情失败')
     postDetail.value = null
@@ -229,14 +220,19 @@ const handleLike = () => {
   }
 
   if (!postDetail.value) return
+  
+  // 如果已点赞，不再执行
+  if (postDetail.value.is_liked) {
+    ElMessage.info('您已点赞过该帖子')
+    return
+  }
 
   likePost(
     postDetail.value.id,
-    postDetail.value.is_liked || false,
     postDetail.value.like_count,
-    (liked, count) => {
+    (count: number) => {
       if (postDetail.value) {
-        postDetail.value.is_liked = liked
+        postDetail.value.is_liked = true
         postDetail.value.like_count = count
       }
     }
@@ -254,40 +250,26 @@ const handleCollect = () => {
   }
 
   if (!postDetail.value) return
+  
+  // 如果已收藏，不再执行
+  if (postDetail.value.is_collected) {
+    ElMessage.info('您已收藏过该帖子，可在收藏夹页面取消收藏')
+    return
+  }
 
   collectPost(
     postDetail.value.id,
-    postDetail.value.is_collected || false,
     postDetail.value.collect_count,
-    (collected, count) => {
+    (count: number) => {
       if (postDetail.value) {
-        postDetail.value.is_collected = collected
+        postDetail.value.is_collected = true
         postDetail.value.collect_count = count
       }
     }
   )
 }
 
-/**
- * 点赞评论
- */
-const handleLikeComment = (comment: PostComment) => {
-  if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
-    return
-  }
 
-  likeComment(
-    comment.id,
-    comment.is_liked || false,
-    comment.like_count,
-    (liked, count) => {
-      comment.is_liked = liked
-      comment.like_count = count
-    }
-  )
-}
 
 /**
  * 删除帖子
@@ -339,7 +321,7 @@ const handleSubmitComment = async () => {
   commentLoading.value = true
   try {
     const res = await createComment({
-      post_id: postDetail.value.id,
+      work_id: postDetail.value.id,
       content: commentContent.value.trim()
     })
 

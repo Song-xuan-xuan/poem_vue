@@ -19,16 +19,16 @@
         
         <div
           v-for="session in sessions"
-          :key="session.id"
+          :key="session.session_id"
           class="session-item"
-          :class="{ active: currentSessionId === session.id }"
-          @click="handleSelectSession(session.id)"
+          :class="{ active: currentSessionId === session.session_id }"
+          @click="handleSelectSession(session.session_id)"
         >
-          <div v-if="editingSessionId === session.id" class="session-edit" @click.stop>
+          <div v-if="editingSessionId === session.session_id" class="session-edit" @click.stop>
             <el-input
               v-model="editingTitle"
               size="small"
-              @keyup.enter="handleSaveTitle(session.id)"
+              @keyup.enter="handleSaveTitle(session.session_id)"
               @blur="handleCancelEdit"
             />
             <div class="edit-actions">
@@ -37,7 +37,7 @@
                 type="primary"
                 text
                 :icon="Check"
-                @click="handleSaveTitle(session.id)"
+                @click="handleSaveTitle(session.session_id)"
               />
               <el-button
                 size="small"
@@ -49,25 +49,24 @@
           </div>
 
           <div v-else class="session-info">
-            <div class="session-title">{{ session.title }}</div>
+            <div class="session-title">{{ session.name }}</div>
             <div class="session-meta">
-              <span>{{ session.message_count }} 条消息</span>
-              <span>{{ formatTime(session.update_time) }}</span>
+              <span>{{ formatTime(session.create_time) }}</span>
             </div>
           </div>
 
-          <div v-if="editingSessionId !== session.id" class="session-actions" @click.stop>
+          <div v-if="editingSessionId !== session.session_id" class="session-actions" @click.stop>
             <el-button
               text
               :icon="Edit"
               size="small"
-              @click="handleEditTitle(session.id, session.title)"
+              @click="handleEditTitle(session.session_id, session.name)"
             />
             <el-button
               text
               :icon="Delete"
               size="small"
-              @click="handleDeleteSession(session.id)"
+              @click="handleDeleteSession(session.session_id)"
             />
           </div>
         </div>
@@ -173,15 +172,14 @@ import {
   ChatLineSquare
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { AISession, ChatMessage } from '@/api/type'
+import type { SessionItem, QAPair, ChatMessage } from '@/api/type'
 import {
   getSessionList,
   createSession,
   renameSession,
   deleteSession
 } from '@/api/session'
-import { getChatHistory, sendMessageStream } from '@/api/chat'
-import { StreamProcessor } from '@/utils/stream'
+import { getQAList, streamDialogWithFetch } from '@/api/chat'
 import { useUserStore } from '@/stores/user'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
@@ -206,7 +204,7 @@ const md: MarkdownIt = new MarkdownIt({
 
 // 会话列表
 const sessionsLoading = ref(false)
-const sessions = ref<AISession[]>([])
+const sessions = ref<SessionItem[]>([])
 const currentSessionId = ref<string>('')
 
 // 会话创建和编辑
@@ -214,9 +212,9 @@ const createLoading = ref(false)
 const editingSessionId = ref<string>('')
 const editingTitle = ref('')
 
-// 消息列表
+// 消息列表（使用 QAPair 作为消息类型）
 const messagesLoading = ref(false)
-const messages = ref<ChatMessage[]>([])
+const messages = ref<any[]>([])
 const messageListRef = ref<HTMLDivElement>()
 
 // 消息发送
@@ -226,20 +224,21 @@ const isSending = ref(false)
 // 流式输出
 const isStreaming = ref(false)
 const streamingContent = ref('')
-const streamProcessor = ref<StreamProcessor | null>(null)
+const currentStreamingMessageId = ref<string>('')
 
 /**
  * 加载会话列表
+ * GET /api/session/list - 直接返回 SessionItem[]
  */
 const loadSessions = async () => {
   sessionsLoading.value = true
   try {
     const res = await getSessionList()
-    sessions.value = res.data.list || []
+    sessions.value = res.data
     
     // 如果有会话但没有选中，自动选中第一个
     if (sessions.value.length > 0 && !currentSessionId.value) {
-      handleSelectSession(sessions.value[0].id)
+      handleSelectSession(sessions.value[0].session_id)
     }
   } catch (error: any) {
     ElMessage.error(error.message || '加载会话列表失败')
@@ -255,14 +254,17 @@ const loadSessions = async () => {
 const handleCreateSession = async () => {
   createLoading.value = true
   try {
+    // 生成 UUID
+    const sessionId = crypto.randomUUID()
     const res = await createSession({
-      title: `新对话 ${new Date().toLocaleString()}`
+      session_id: sessionId,
+      name: `新对话 ${new Date().toLocaleString()}`
     })
     ElMessage.success('创建成功')
     
     // 刷新列表并选中新会话
     await loadSessions()
-    handleSelectSession(res.data.id)
+    handleSelectSession(res.data.session_id)
   } catch (error: any) {
     ElMessage.error(error.message || '创建会话失败')
   } finally {
@@ -300,14 +302,14 @@ const handleSaveTitle = async (sessionId: string) => {
   try {
     await renameSession({
       session_id: sessionId,
-      title: editingTitle.value.trim()
+      name: editingTitle.value.trim()
     })
     ElMessage.success('重命名成功')
     
     // 更新本地列表
-    const session = sessions.value.find(s => s.id === sessionId)
+    const session = sessions.value.find(s => s.session_id === sessionId)
     if (session) {
-      session.title = editingTitle.value.trim()
+      session.name = editingTitle.value.trim()
     }
     
     handleCancelEdit()
@@ -339,7 +341,7 @@ const handleDeleteSession = async (sessionId: string) => {
       }
     )
 
-    await deleteSession({ session_id: sessionId })
+    await deleteSession(sessionId)
     ElMessage.success('删除成功')
     
     // 如果删除的是当前会话，清空选中
@@ -359,12 +361,30 @@ const handleDeleteSession = async (sessionId: string) => {
 
 /**
  * 加载消息历史
+ * GET /api/qa/list?session_id={sessionId}
+ * 将 QAPair 转换为 User + AI 气泡
  */
 const loadMessages = async (sessionId: string) => {
   messagesLoading.value = true
   try {
-    const res = await getChatHistory(sessionId)
-    messages.value = res.data.messages || []
+    const res = await getQAList(sessionId)
+    const qaList = res.data
+    
+    // 将 QA 列表转换为 Message 列表（一个 QA 变为两条消息）
+    messages.value = qaList.flatMap((qa: QAPair) => [
+      {
+        id: `${qa.question_id}_q`,
+        role: 'user',
+        content: qa.question,
+        timestamp: qa.timestamp
+      },
+      {
+        id: `${qa.question_id}_a`,
+        role: 'assistant',
+        content: qa.answer,
+        timestamp: qa.timestamp
+      }
+    ])
     
     // 滚动到底部
     await nextTick()
@@ -378,7 +398,8 @@ const loadMessages = async (sessionId: string) => {
 }
 
 /**
- * 发送消息
+ * 发送消息（流式）
+ * GET /api/chat/dialog/stream?query={query}&session_id={sessionId}
  */
 const handleSendMessage = async () => {
   if (!inputMessage.value.trim() || !currentSessionId.value) return
@@ -387,8 +408,9 @@ const handleSendMessage = async () => {
   inputMessage.value = ''
   
   // 添加用户消息到列表
+  const userMsgId = `user_${Date.now()}`
   const userMsg: ChatMessage = {
-    id: Date.now().toString(),
+    id: userMsgId,
     role: 'user',
     content: userMessage,
     timestamp: Math.floor(Date.now() / 1000)
@@ -398,91 +420,78 @@ const handleSendMessage = async () => {
   await nextTick()
   scrollToBottom()
   
-  // 发送流式请求
+  // 准备流式接收
   isStreaming.value = true
   streamingContent.value = ''
+  currentStreamingMessageId.value = `ai_${Date.now()}`
   
   try {
-    const response = await sendMessageStream({
-      session_id: currentSessionId.value,
-      content: userMessage,
-      stream: true
-    })
-    
-    streamProcessor.value = new StreamProcessor()
-    
-    await streamProcessor.value.processStream(
-      response,
-      (chunk) => {
-        if (chunk.type === 'text' && chunk.content) {
-          streamingContent.value += chunk.content
-          nextTick(() => scrollToBottom())
-        } else if (chunk.type === 'done') {
-          // 流结束，将内容添加到消息列表
-          if (streamingContent.value) {
+    await streamDialogWithFetch(
+      userMessage,
+      currentSessionId.value,
+      // onMessage
+      (content: string, isFinal: boolean, fullContent: string) => {
+        if (isFinal) {
+          // 流结束，使用完整内容
+          if (fullContent) {
             const assistantMsg: ChatMessage = {
-              id: chunk.message_id || Date.now().toString(),
+              id: currentStreamingMessageId.value,
               role: 'assistant',
-              content: streamingContent.value,
+              content: fullContent,
               timestamp: Math.floor(Date.now() / 1000)
             }
             messages.value.push(assistantMsg)
           }
-          
           isStreaming.value = false
           streamingContent.value = ''
-          streamProcessor.value = null
-          
-          // 刷新会话列表（消息数可能变化）
-          loadSessions()
+        } else {
+          // 流式拼接
+          streamingContent.value += content
+          nextTick(() => scrollToBottom())
         }
       },
-      () => {
-        // 完成回调
-        isStreaming.value = false
-        streamingContent.value = ''
-        streamProcessor.value = null
-      },
-      (error) => {
-        // 错误回调
+      // onError
+      (error: Error) => {
         ElMessage.error(error.message || '发送消息失败')
         isStreaming.value = false
         streamingContent.value = ''
-        streamProcessor.value = null
+      },
+      // onComplete
+      () => {
+        isStreaming.value = false
+        streamingContent.value = ''
+        // 刷新会话列表
+        loadSessions()
       }
     )
   } catch (error: any) {
     ElMessage.error(error.message || '发送消息失败')
     isStreaming.value = false
     streamingContent.value = ''
-    streamProcessor.value = null
   }
 }
 
 /**
  * 停止生成
+ * 注意：fetch + ReadableStream 不支持中断，需要后端支持
  */
 const handleStopGeneration = () => {
-  if (streamProcessor.value) {
-    streamProcessor.value.abort()
-    
-    // 将已生成的内容保存
-    if (streamingContent.value) {
-      const assistantMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: streamingContent.value,
-        timestamp: Math.floor(Date.now() / 1000)
-      }
-      messages.value.push(assistantMsg)
+  // 将已生成的内容保存
+  if (streamingContent.value) {
+    const assistantMsg: ChatMessage = {
+      id: currentStreamingMessageId.value,
+      role: 'assistant',
+      content: streamingContent.value,
+      timestamp: Math.floor(Date.now() / 1000)
     }
-    
-    isStreaming.value = false
-    streamingContent.value = ''
-    streamProcessor.value = null
-    
-    ElMessage.info('已停止生成')
+    messages.value.push(assistantMsg)
   }
+  
+  isStreaming.value = false
+  streamingContent.value = ''
+  currentStreamingMessageId.value = ''
+  
+  ElMessage.info('已停止生成')
 }
 
 /**

@@ -1,10 +1,7 @@
 import { request } from '@/utils/request'
 import type { 
   Result,
-  FavoritePageData,
-  UnCollectParams,
-  FavoriteSearchParams,
-  PageParams
+  FavoritePageData
 } from './type'
 
 /**
@@ -13,21 +10,18 @@ import type {
 
 /**
  * 分页查询收藏夹列表
+ * @param params - 支持 page 和 title（模糊查询）参数
  */
-export const getFavorites = (params: PageParams): Promise<Result<FavoritePageData>> => {
-  return request.get('/api/favorite/list', { params })
+export const getFavorites = (params: { page?: number; title?: string }): Promise<Result<FavoritePageData>> => {
+  return request.get('/api/collect/list', { params })
 }
 
 /**
  * 取消收藏
+ * @param collectId - 收藏记录ID
  */
-export const unCollect = (params: UnCollectParams): Promise<Result<null>> => {
-  return request.delete('/api/favorite/item', { data: params })
+export const unCollect = (collectId: string): Promise<Result<any>> => {
+  return request.delete(`/api/collect/${collectId}`)
 }
 
-/**
- * 收藏夹搜索（模糊查询）
- */
-export const searchFavorites = (params: FavoriteSearchParams): Promise<Result<FavoritePageData>> => {
-  return request.get('/api/favorite/search', { params })
-}
+

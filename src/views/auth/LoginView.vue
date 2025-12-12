@@ -75,17 +75,24 @@ const handleLogin = async () => {
 
     loading.value = true
     try {
+      console.log('[Login] 开始登录...')
       const res = await login({
         username: loginForm.username,
         password: loginForm.password
       })
       
+      console.log('[Login] 登录响应:', res)
+      
       if (res.code === 200) {
+        console.log('[Login] 登录成功，保存 Token...')
         // 保存 Token
         userStore.setTokens(res.data)
         
+        console.log('[Login] 获取用户信息...')
         // 获取用户信息
         const profileSuccess = await userStore.fetchProfile()
+        
+        console.log('[Login] 获取用户信息结果:', profileSuccess)
         
         if (!profileSuccess) {
           ElMessage.error('获取用户信息失败')
@@ -103,10 +110,14 @@ const handleLogin = async () => {
         
         // 跳转到目标页面或首页
         const redirect = (route.query.redirect as string) || '/'
-        router.push(redirect)
+        console.log('[Login] 准备跳转到:', redirect)
+        await router.push(redirect)
+        console.log('[Login] 跳转完成')
+      } else {
+        console.error('[Login] 登录失败，code:', res.code)
       }
     } catch (error: any) {
-      console.error('登录失败:', error)
+      console.error('[Login] 登录异常:', error)
       // 错误已在 request.ts 中处理并显示
     } finally {
       loading.value = false

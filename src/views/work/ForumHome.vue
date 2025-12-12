@@ -47,35 +47,20 @@
             class="post-item"
             @click="goToDetail(post.id)"
           >
-            <!-- 用户信息 -->
-            <div class="post-header">
-              <el-avatar :src="post.user_photo" :size="40">
-                {{ post.user_name.charAt(0) }}
-              </el-avatar>
-              <div class="user-info">
-                <div class="user-name">
-                  {{ post.user_name }}
-                  <el-tag size="small" type="info" effect="plain">
-                    {{ post.user_level }}
-                  </el-tag>
-                </div>
-                <div class="post-time">{{ formatTime(post.publish_time) }}</div>
-              </div>
-            </div>
-
             <!-- 帖子内容 -->
             <div class="post-content">
               <h3 class="post-title">{{ post.title }}</h3>
               <p class="post-preview">{{ post.content }}</p>
-              <div class="post-tags" v-if="post.tags && post.tags.length > 0">
+              <div class="post-time">{{ formatTime(post.publish_time) }}</div>
+              <div class="post-tags" v-if="post.styles && post.styles.length > 0">
                 <el-tag
-                  v-for="tag in post.tags"
-                  :key="tag"
+                  v-for="style in post.styles"
+                  :key="style"
                   size="small"
                   type="info"
                   effect="plain"
                 >
-                  {{ tag }}
+                  {{ style }}
                 </el-tag>
               </div>
             </div>
@@ -85,24 +70,22 @@
               <div class="stats">
                 <span class="stat-item">
                   <el-icon><ChatDotRound /></el-icon>
-                  {{ post.comment_count }}
+                  {{ post.comments?.length || 0 }}
                 </span>
               </div>
               <div class="actions">
                 <el-button
                   text
-                  :type="post.is_liked ? 'primary' : 'default'"
                   @click.stop="handleLikePost(post)"
                 >
-                  <el-icon><Star :class="{ filled: post.is_liked }" /></el-icon>
+                  <el-icon><Star /></el-icon>
                   {{ post.like_count }}
                 </el-button>
                 <el-button
                   text
-                  :type="post.is_collected ? 'warning' : 'default'"
                   @click.stop="handleCollectPost(post)"
                 >
-                  <el-icon><Collection :class="{ filled: post.is_collected }" /></el-icon>
+                  <el-icon><Collection /></el-icon>
                   {{ post.collect_count }}
                 </el-button>
               </div>
@@ -114,12 +97,10 @@
         <div class="pagination-container" v-if="total > 0">
           <el-pagination
             v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 30, 50]"
+            :page-size="pageSize"
             :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
+            layout="total, prev, pager, next, jumper"
             @current-change="handlePageChange"
-            @size-change="handleSizeChange"
           />
         </div>
       </div>
@@ -148,12 +129,8 @@
                 <div class="rank-title">{{ item.title }}</div>
                 <div class="rank-stats">
                   <span>
-                    <el-icon><Star /></el-icon>
-                    {{ item.like_count }}
-                  </span>
-                  <span>
-                    <el-icon><ChatDotRound /></el-icon>
-                    {{ item.comment_count }}
+                    <el-icon><Histogram /></el-icon>
+                    {{ item.heat_score.toFixed(1) }}
                   </span>
                 </div>
               </div>
@@ -196,11 +173,11 @@
           />
         </el-form-item>
 
-        <el-form-item label="标签" prop="tags">
+        <el-form-item label="风格标签" prop="styles">
           <el-select
-            v-model="createForm.tags"
+            v-model="createForm.styles"
             multiple
-            placeholder="选择标签（最多3个）"
+            placeholder="选择风格标签（最如3个）"
             style="width: 100%"
           >
             <el-option label="诗词讨论" value="诗词讨论" />
@@ -234,8 +211,8 @@ import {
   Histogram
 } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import type { ForumPost } from '@/api/type'
-import { getForumPosts, createPost, getHotRank } from '@/api/forum'
+import type { WorkItem, HotWorkItem } from '@/api/type'
+import { getHomePosts, searchPostsByKeyword, searchPostsByStyle, createPost, getHotRank } from '@/api/work'
 import { useLikeAndFavor } from '@/composables/useLikeAndFavor'
 import { useUserStore } from '@/stores/user'
 
@@ -249,14 +226,14 @@ const selectedTag = ref('')
 
 // 帖子列表
 const loading = ref(false)
-const posts = ref<ForumPost[]>([])
+const posts = ref<WorkItem[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(20)
 
 // 热力榜
 const hotRankLoading = ref(false)
-const hotRankList = ref<ForumPost[]>([])
+const hotRankList = ref<HotWorkItem[]>([])
 
 // 发布帖子
 const showCreateDialog = ref(false)
@@ -265,7 +242,7 @@ const createFormRef = ref<FormInstance>()
 const createForm = ref({
   title: '',
   content: '',
-  tags: [] as string[]
+  styles: [] as string[]
 })
 
 const createRules: FormRules = {
@@ -277,28 +254,41 @@ const createRules: FormRules = {
     { required: true, message: '请输入内容', trigger: 'blur' },
     { min: 10, max: 2000, message: '内容长度在 10 到 2000 个字符', trigger: 'blur' }
   ],
-  tags: [
+  styles: [
     {
       type: 'array',
       max: 3,
-      message: '最多选择 3 个标签',
+      message: '最多选择 3 个风格标签',
       trigger: 'change'
     }
   ]
 }
 
 /**
- * 加载帖子列表
+ * 加载帖子列表（支持搜索和筛选）
  */
 const loadPosts = async () => {
   loading.value = true
   try {
-    const res = await getForumPosts({
-      page_num: currentPage.value,
-      page_size: pageSize.value
-    })
-    posts.value = res.data.list
-    total.value = res.data.total
+    let res
+    
+    // 根据搜索关键词、风格标签或主页加载
+    if (searchKeyword.value.trim()) {
+      // 关键词搜索（每页 10 条）
+      res = await searchPostsByKeyword(searchKeyword.value.trim(), currentPage.value)
+      pageSize.value = 10
+    } else if (selectedTag.value) {
+      // 风格筛选（每页 10 条）
+      res = await searchPostsByStyle(selectedTag.value, currentPage.value)
+      pageSize.value = 10
+    } else {
+      // 主页列表（每页 20 条）
+      res = await getHomePosts(currentPage.value)
+      pageSize.value = 20
+    }
+    
+    posts.value = res.data.items || []
+    total.value = res.data.total || 0
   } catch (error: any) {
     ElMessage.error(error.message || '加载帖子列表失败')
     posts.value = []
@@ -315,7 +305,7 @@ const loadHotRank = async () => {
   hotRankLoading.value = true
   try {
     const res = await getHotRank()
-    hotRankList.value = res.data.list.slice(0, 10)
+    hotRankList.value = res.data.top10 || []
   } catch (error: any) {
     console.error('加载热力榜失败:', error)
     hotRankList.value = []
@@ -329,8 +319,6 @@ const loadHotRank = async () => {
  */
 const handleSearch = () => {
   currentPage.value = 1
-  // TODO: 实现搜索和标签筛选逻辑
-  // 当前 API 不支持搜索参数，这里仅作演示
   loadPosts()
 }
 
@@ -342,19 +330,12 @@ const handlePageChange = (page: number) => {
   loadPosts()
 }
 
-/**
- * 每页条数切换
- */
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1
-  loadPosts()
-}
+
 
 /**
  * 点赞帖子
  */
-const handleLikePost = (post: ForumPost) => {
+const handleLikePost = (post: WorkItem) => {
   if (!userStore.isLoggedIn()) {
     ElMessage.warning('请先登录')
     router.push('/auth/login')
@@ -363,10 +344,8 @@ const handleLikePost = (post: ForumPost) => {
 
   likePost(
     post.id,
-    post.is_liked || false,
     post.like_count,
-    (liked, count) => {
-      post.is_liked = liked
+    (count: number) => {
       post.like_count = count
     }
   )
@@ -375,7 +354,7 @@ const handleLikePost = (post: ForumPost) => {
 /**
  * 收藏帖子
  */
-const handleCollectPost = (post: ForumPost) => {
+const handleCollectPost = (post: WorkItem) => {
   if (!userStore.isLoggedIn()) {
     ElMessage.warning('请先登录')
     router.push('/auth/login')
@@ -384,10 +363,8 @@ const handleCollectPost = (post: ForumPost) => {
 
   collectPost(
     post.id,
-    post.is_collected || false,
     post.collect_count,
-    (collected, count) => {
-      post.is_collected = collected
+    (count: number) => {
       post.collect_count = count
     }
   )
@@ -404,18 +381,24 @@ const handleCreatePost = async () => {
 
     createLoading.value = true
     try {
-      const res = await createPost(createForm.value)
+      const res = await createPost({
+        title: createForm.value.title,
+        content: createForm.value.content,
+        styles: createForm.value.styles
+      })
       ElMessage.success('发布成功')
       showCreateDialog.value = false
-      createForm.value = { title: '', content: '', tags: [] }
+      createForm.value = { title: '', content: '', styles: [] }
       createFormRef.value?.resetFields()
       
       // 刷新列表
       currentPage.value = 1
       loadPosts()
       
-      // 跳转到详情页
-      router.push(`/forum/post/${res.data.id}`)
+      // 跳转到详情页（如果 API 返回了 ID）
+      if (res.data?.poem?.id) {
+        router.push(`/forum/post/${res.data.poem.id}`)
+      }
     } catch (error: any) {
       ElMessage.error(error.message || '发布失败')
     } finally {

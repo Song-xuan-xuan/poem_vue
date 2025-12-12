@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { toggleLike, toggleCollect } from '@/api/forum'
+import { likePost as likePostAPI, collectPost as collectPostAPI } from '@/api/work'
 
 /**
  * 防抖函数
@@ -29,47 +29,44 @@ export function useLikeAndFavor() {
   const pendingRequests = ref(new Map<string, boolean>())
 
   /**
-   * 点赞/取消点赞
-   * @param targetId 目标 ID（帖子或评论）
-   * @param targetType 目标类型
-   * @param currentLiked 当前是否已点赞
+   * 点赞帖子（只能点赞一次，不支持取消）
+   * @param postId 帖子 ID
    * @param currentCount 当前点赞数
-   * @param onUpdate 更新回调函数
+   * @param onSuccess 成功回调
+   * @param onError 错误回调
    */
-  const handleLike = debounce(
+  const handleLikePost = debounce(
     async (
-      targetId: string,
-      targetType: 'post' | 'comment',
-      currentLiked: boolean,
+      postId: string,
       currentCount: number,
-      onUpdate: (liked: boolean, count: number) => void
+      onSuccess: (count: number) => void,
+      onError?: () => void
     ) => {
-      const requestKey = `like_${targetType}_${targetId}`
+      const requestKey = `like_${postId}`
       
       // 如果已有相同请求在进行中，忽略本次请求
       if (pendingRequests.value.get(requestKey)) {
         return
       }
 
-      // 乐观 UI 更新：立即更新 UI
-      const newLiked = !currentLiked
-      const newCount = newLiked ? currentCount + 1 : currentCount - 1
-      onUpdate(newLiked, newCount)
-
       // 标记请求进行中
       pendingRequests.value.set(requestKey, true)
 
       try {
-        await toggleLike({
-          target_id: targetId,
-          target_type: targetType
-        })
-        // 请求成功，保持 UI 状态
-        ElMessage.success(newLiked ? '点赞成功' : '取消点赞')
+        await likePostAPI(postId)
+        // 请求成功
+        ElMessage.success('点赞成功')
+        onSuccess(currentCount + 1)
       } catch (error: any) {
-        // 请求失败，回退 UI 状态
-        onUpdate(currentLiked, currentCount)
-        ElMessage.error(error.message || '操作失败')
+        // 处理重复点赞错误
+        if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已')) {
+          ElMessage.warning('您已点赞过该帖子')
+          // 仍然认为成功，更新 UI
+          onSuccess(currentCount + 1)
+        } else {
+          ElMessage.error(error.message || '点赞失败')
+          if (onError) onError()
+        }
       } finally {
         // 移除请求标记
         pendingRequests.value.delete(requestKey)
@@ -79,18 +76,19 @@ export function useLikeAndFavor() {
   )
 
   /**
-   * 收藏/取消收藏
+   * 收藏帖子（只能收藏一次，不支持取消）
+   * 注意：取消收藏只能在收藏夹页面进行
    * @param postId 帖子 ID
-   * @param currentCollected 当前是否已收藏
    * @param currentCount 当前收藏数
-   * @param onUpdate 更新回调函数
+   * @param onSuccess 成功回调
+   * @param onError 错误回调
    */
-  const handleCollect = debounce(
+  const handleCollectPost = debounce(
     async (
       postId: string,
-      currentCollected: boolean,
       currentCount: number,
-      onUpdate: (collected: boolean, count: number) => void
+      onSuccess: (count: number) => void,
+      onError?: () => void
     ) => {
       const requestKey = `collect_${postId}`
 
@@ -99,22 +97,24 @@ export function useLikeAndFavor() {
         return
       }
 
-      // 乐观 UI 更新：立即更新 UI
-      const newCollected = !currentCollected
-      const newCount = newCollected ? currentCount + 1 : currentCount - 1
-      onUpdate(newCollected, newCount)
-
       // 标记请求进行中
       pendingRequests.value.set(requestKey, true)
 
       try {
-        await toggleCollect({ post_id: postId })
-        // 请求成功，保持 UI 状态
-        ElMessage.success(newCollected ? '收藏成功' : '取消收藏')
+        await collectPostAPI(postId)
+        // 请求成功
+        ElMessage.success('收藏成功')
+        onSuccess(currentCount + 1)
       } catch (error: any) {
-        // 请求失败，回退 UI 状态
-        onUpdate(currentCollected, currentCount)
-        ElMessage.error(error.message || '操作失败')
+        // 处理重复收藏错误
+        if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已收藏')) {
+          ElMessage.warning('您已收藏过该帖子')
+          // 仍然认为成功，更新 UI
+          onSuccess(currentCount + 1)
+        } else {
+          ElMessage.error(error.message || '收藏失败')
+          if (onError) onError()
+        }
       } finally {
         // 移除请求标记
         pendingRequests.value.delete(requestKey)
@@ -128,23 +128,11 @@ export function useLikeAndFavor() {
    */
   const likePost = (
     postId: string,
-    currentLiked: boolean,
     currentCount: number,
-    onUpdate: (liked: boolean, count: number) => void
+    onSuccess: (count: number) => void,
+    onError?: () => void
   ) => {
-    handleLike(postId, 'post', currentLiked, currentCount, onUpdate)
-  }
-
-  /**
-   * 点赞评论
-   */
-  const likeComment = (
-    commentId: string,
-    currentLiked: boolean,
-    currentCount: number,
-    onUpdate: (liked: boolean, count: number) => void
-  ) => {
-    handleLike(commentId, 'comment', currentLiked, currentCount, onUpdate)
+    handleLikePost(postId, currentCount, onSuccess, onError)
   }
 
   /**
@@ -152,16 +140,15 @@ export function useLikeAndFavor() {
    */
   const collectPost = (
     postId: string,
-    currentCollected: boolean,
     currentCount: number,
-    onUpdate: (collected: boolean, count: number) => void
+    onSuccess: (count: number) => void,
+    onError?: () => void
   ) => {
-    handleCollect(postId, currentCollected, currentCount, onUpdate)
+    handleCollectPost(postId, currentCount, onSuccess, onError)
   }
 
   return {
     likePost,
-    likeComment,
     collectPost
   }
 }
