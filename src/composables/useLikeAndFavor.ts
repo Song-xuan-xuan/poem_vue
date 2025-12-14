@@ -53,16 +53,16 @@ export function useLikeAndFavor() {
       pendingRequests.value.set(requestKey, true)
 
       try {
-        await likePostAPI(postId)
-        // 请求成功
+        const res = await likePostAPI(postId)
+        // 请求成功，使用接口返回的最新点赞数
         ElMessage.success('点赞成功')
-        onSuccess(currentCount + 1)
+        onSuccess(res.data.like_count)
       } catch (error: any) {
         // 处理重复点赞错误
         if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已')) {
           ElMessage.warning('您已点赞过该帖子')
-          // 仍然认为成功，更新 UI
-          onSuccess(currentCount + 1)
+          // 保持当前计数，不增加
+          onSuccess(currentCount)
         } else {
           ElMessage.error(error.message || '点赞失败')
           if (onError) onError()
@@ -101,16 +101,16 @@ export function useLikeAndFavor() {
       pendingRequests.value.set(requestKey, true)
 
       try {
-        await collectPostAPI(postId)
-        // 请求成功
+        const res = await collectPostAPI(postId)
+        // 请求成功，使用接口返回的最新收藏数
         ElMessage.success('收藏成功')
-        onSuccess(currentCount + 1)
+        onSuccess(res.data.collect_count)
       } catch (error: any) {
         // 处理重复收藏错误
         if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已收藏')) {
           ElMessage.warning('您已收藏过该帖子')
-          // 仍然认为成功，更新 UI
-          onSuccess(currentCount + 1)
+          // 保持当前计数，不增加
+          onSuccess(currentCount)
         } else {
           ElMessage.error(error.message || '收藏失败')
           if (onError) onError()

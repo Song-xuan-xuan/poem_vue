@@ -37,8 +37,8 @@ const validateUsername = (rule: any, value: string, callback: any) => {
 const validatePassword = (rule: any, value: string, callback: any) => {
   if (!value) {
     callback(new Error('请输入密码'))
-  } else if (value.length < 6 || value.length > 18) {
-    callback(new Error('密码长度为6-18位'))
+  } else if (!/^[a-zA-Z0-9_]{6,18}$/.test(value)) {
+    callback(new Error('密码格式不正确'))
   } else {
     callback()
   }

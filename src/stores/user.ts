@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { getUserInfo } from '@/api/user'
-import type { UserInfo, TokenData } from '@/api/type'
+import type { UserProfileData, TokenData } from '@/api/type'
 
 /**
  * 用户状态管理 Store (Setup Store 写法)
@@ -13,7 +13,8 @@ export const useUserStore = defineStore('user', () => {
   // ==================== State ====================
   const accessToken = ref<string>('')
   const refreshToken = ref<string>('')
-  const userInfo = ref<UserInfo | null>(null)
+  // /api/user/info 现在返回“当前用户信息（含作品）”
+  const userInfo = ref<UserProfileData | null>(null)
 
   // ==================== Actions ====================
   
@@ -56,7 +57,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 设置用户信息
    */
-  const setUserInfo = (info: UserInfo) => {
+  const setUserInfo = (info: UserProfileData) => {
     userInfo.value = info
     
     // 持久化到 localStorage

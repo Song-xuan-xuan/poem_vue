@@ -9,7 +9,7 @@
         <el-card class="post-card" shadow="hover">
           <!-- 帖子头部 -->
           <div class="post-header">
-            <div class="user-section">
+            <div class="user-section" style="cursor: pointer;" @click="goToUserProfile(String(postDetail.user_id))">
               <el-avatar :size="50">
                 U
               </el-avatar>
@@ -165,6 +165,10 @@ const router = useRouter()
 const userStore = useUserStore()
 const { likePost, collectPost } = useLikeAndFavor()
 
+const goToUserProfile = (userId: string) => {
+  router.push(`/user/profile/${userId}`)
+}
+
 // 帖子详情（扩展类型以包含 UI 状态）
 const loading = ref(false)
 const postDetail = ref<(WorkDetail & { is_liked?: boolean; is_collected?: boolean }) | null>(null)
@@ -176,10 +180,9 @@ const deleteLoading = ref(false)
 const commentContent = ref('')
 const commentLoading = ref(false)
 
-// 是否是作者
+// 是否显示删除按钮（登录即可显示，由后端权限判断）
 const isAuthor = computed(() => {
-  if (!postDetail.value || !userStore.userInfo) return false
-  return postDetail.value.user_id === String(userStore.userInfo.id)
+  return userStore.isLoggedIn()
 })
 
 /**
@@ -289,12 +292,13 @@ const handleDelete = async () => {
     )
 
     deleteLoading.value = true
-    await deletePost(postDetail.value.id)
-    ElMessage.success('删除成功')
+    const res = await deletePost(postDetail.value.id)
+    ElMessage.success(res.message || '删除成功')
     router.push('/forum')
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || '删除失败')
+      // 显示后端返回的错误信息（如 404/无权限等）
+      ElMessage.error(error.response?.data?.message || error.message || '删除失败')
     }
   } finally {
     deleteLoading.value = false

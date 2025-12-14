@@ -1,15 +1,21 @@
-import { request } from '@/utils/request'
+import { requestBiz as request } from '@/utils/request'
 import type { 
   Result,
   WorkPageData,
   WorkDetail,
+  CreateWorkParams,
+  CreateWorkData,
+  LikeWorkData,
+  CollectWorkData,
+  CreateWorkCommentParams,
+  CreateWorkCommentData,
+  HotRankData,
+  LikeParams,
+  // 兼容旧版
   CreatePostParams,
   CreatePostData,
   CreateCommentParams,
   CreateCommentData,
-  LikeParams,
-  HotRankData,
-  // 兼容旧版
   ForumPageData,
   PostDetail
 } from './type'
@@ -64,7 +70,7 @@ export const getPostDetail = (workId: string): Promise<Result<{ detail: WorkDeta
  * 发布帖子
  * @param params - 包含 title, content, styles
  */
-export const createPost = (params: { title: string; content: string; styles: string[] }): Promise<Result<any>> => {
+export const createPost = (params: CreateWorkParams): Promise<Result<CreateWorkData>> => {
   return request.post('/api/work/poem', params)
 }
 
@@ -80,15 +86,16 @@ export const deletePost = (poemId: string): Promise<Result<null>> => {
  * 发布评论
  * @param params - work_id 和 content
  */
-export const createComment = (params: { work_id: string; content: string }): Promise<Result<any>> => {
+export const createComment = (params: CreateWorkCommentParams): Promise<Result<CreateWorkCommentData>> => {
   return request.post('/api/work/comment', params)
 }
 
 /**
  * 点赞帖子
  * @param poemId - 帖子ID
+ * @returns 包含最新 like_count 的响应数据
  */
-export const likePost = (poemId: string): Promise<Result<any>> => {
+export const likePost = (poemId: string): Promise<Result<LikeWorkData>> => {
   return request.post(`/api/work/like/${poemId}`)
 }
 
@@ -96,15 +103,17 @@ export const likePost = (poemId: string): Promise<Result<any>> => {
  * 点赞/取消点赞（兼容旧版）
  * @deprecated 请使用 likePost
  */
-export const toggleLike = (params: LikeParams): Promise<Result<null>> => {
+export const toggleLike = (params: LikeParams): Promise<Result<LikeWorkData>> => {
   const poemId = params.target_id
   return likePost(poemId)
 }
 
 /**
  * 收藏帖子
+ * @param poemId - 帖子ID
+ * @returns 包含最新 collect_count 的响应数据
  */
-export const collectPost = (poemId: string): Promise<Result<any>> => {
+export const collectPost = (poemId: string): Promise<Result<CollectWorkData>> => {
   return request.post(`/api/work/collect/${poemId}/`)
 }
 

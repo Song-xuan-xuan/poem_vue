@@ -179,7 +179,7 @@ import {
   renameSession,
   deleteSession
 } from '@/api/session'
-import { getQAList, streamDialogWithFetch } from '@/api/chat'
+import { getQAList, streamDialogWithFetch, stopQA } from '@/api/chat'
 import { useUserStore } from '@/stores/user'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
@@ -225,6 +225,7 @@ const isSending = ref(false)
 const isStreaming = ref(false)
 const streamingContent = ref('')
 const currentStreamingMessageId = ref<string>('')
+const currentQuestionId = ref<string>('') // 后端的 question_id
 
 /**
  * 加载会话列表
@@ -424,13 +425,33 @@ const handleSendMessage = async () => {
   isStreaming.value = true
   streamingContent.value = ''
   currentStreamingMessageId.value = `ai_${Date.now()}`
+  currentQuestionId.value = '' // 重置
+  
+  // 标记是否已获取 question_id
+  let hasQuestionId = false
   
   try {
     await streamDialogWithFetch(
       userMessage,
       currentSessionId.value,
       // onMessage
-      (content: string, isFinal: boolean, fullContent: string) => {
+      async (content: string, isFinal: boolean, fullContent: string) => {
+        // 在收到第一个 chunk 后获取 question_id
+        if (!hasQuestionId && content) {
+          hasQuestionId = true
+          try {
+            const qaRes = await getQAList(currentSessionId.value)
+            if (qaRes.data && qaRes.data.length > 0) {
+              // 取最后一条（最新的）
+              const latestQA = qaRes.data[qaRes.data.length - 1]
+              currentQuestionId.value = latestQA.question_id
+              console.log('[AI] 获取到 question_id:', currentQuestionId.value)
+            }
+          } catch (error) {
+            console.error('[AI] 获取 question_id 失败:', error)
+          }
+        }
+        
         if (isFinal) {
           // 流结束，使用完整内容
           if (fullContent) {
@@ -444,6 +465,7 @@ const handleSendMessage = async () => {
           }
           isStreaming.value = false
           streamingContent.value = ''
+          currentQuestionId.value = '' // 清空
         } else {
           // 流式拼接
           streamingContent.value += content
@@ -473,9 +495,9 @@ const handleSendMessage = async () => {
 
 /**
  * 停止生成
- * 注意：fetch + ReadableStream 不支持中断，需要后端支持
+ * 同时调用后端 stopQA 接口，对齐 api.md 的状态管理
  */
-const handleStopGeneration = () => {
+const handleStopGeneration = async () => {
   // 将已生成的内容保存
   if (streamingContent.value) {
     const assistantMsg: ChatMessage = {
@@ -485,11 +507,28 @@ const handleStopGeneration = () => {
       timestamp: Math.floor(Date.now() / 1000)
     }
     messages.value.push(assistantMsg)
+
+    // 调用后端 stopQA 接口，使用真实的 question_id
+    if (currentQuestionId.value) {
+      try {
+        await stopQA({
+          session_id: currentSessionId.value,
+          question_id: currentQuestionId.value,
+          num_render: streamingContent.value.length
+        })
+        console.log('[AI] 停止成功，question_id:', currentQuestionId.value)
+      } catch (error) {
+        console.error('[AI] 调用 stopQA 失败:', error)
+      }
+    } else {
+      console.warn('[AI] 未获取到 question_id，无法调用 stopQA')
+    }
   }
   
   isStreaming.value = false
   streamingContent.value = ''
   currentStreamingMessageId.value = ''
+  currentQuestionId.value = ''
   
   ElMessage.info('已停止生成')
 }

@@ -1,13 +1,15 @@
-import { request } from '@/utils/request'
+import { requestAI as request } from '@/utils/request'
 import type {
   Result,
   SessionItem,
   CreateSessionParams,
+  CreateSessionData,
   RenameSessionParams
 } from './type'
 
 /**
  * AI 会话管理 API（对齐 api.md 智能体问答系统）
+ * 使用 requestAI 连接到 8001 端口的 AI 服务
  */
 
 /**
@@ -26,7 +28,7 @@ export const getSessionList = (): Promise<Result<SessionItem[]>> => {
  * POST /api/session/create
  * 注意：session_id 必须由前端生成（UUID 格式）
  */
-export const createSession = (params: CreateSessionParams): Promise<Result<SessionItem>> => {
+export const createSession = (params: CreateSessionParams): Promise<Result<CreateSessionData>> => {
   return request.post('/api/session/create', params)
 }
 

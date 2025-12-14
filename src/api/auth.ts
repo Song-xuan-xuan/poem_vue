@@ -1,4 +1,4 @@
-import { request } from '@/utils/request'
+import { requestBiz as request } from '@/utils/request'
 import type { 
   Result, 
   LoginParams, 

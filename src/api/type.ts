@@ -286,6 +286,80 @@ export interface WorkPageData {
 }
 
 /**
+ * 发布帖子请求参数
+ */
+export interface CreateWorkParams {
+  title: string
+  content: string
+  styles?: string[]
+}
+
+/**
+ * 发布帖子响应数据
+ */
+export interface CreateWorkData {
+  poem: WorkItem
+  user_exp: number
+  user_level: string
+  level_updated: boolean
+  original_exp: number
+}
+
+/**
+ * 点赞帖子响应数据
+ */
+export interface LikeWorkData {
+  poem_id: string
+  like_count: number
+  post_user_id: number
+  user_original_exp: number
+  user_new_exp: number
+  user_original_level: string
+  user_new_level: string
+  level_updated: boolean
+}
+
+/**
+ * 收藏帖子响应数据
+ */
+export interface CollectWorkData {
+  poem_id: string
+  collect_count: number
+  post_user_id: number
+  user_original_exp: number
+  user_new_exp: number
+  user_original_level: string
+  user_new_level: string
+  level_updated: boolean
+}
+
+/**
+ * 发布评论请求参数
+ */
+export interface CreateWorkCommentParams {
+  work_id: string
+  content: string
+}
+
+/**
+ * 发布评论响应数据
+ */
+export interface CreateWorkCommentData {
+  comment_id: string
+  work_id: string
+  content: string
+  comment_time: number
+  user_id: number
+  comment_count: number
+  post_user_id: number
+  user_original_exp: number
+  user_new_exp: number
+  user_original_level: string
+  user_new_level: string
+  level_updated: boolean
+}
+
+/**
  * 热力榜项
  */
 export interface HotWorkItem {
@@ -299,6 +373,7 @@ export interface HotWorkItem {
  */
 export interface HotRankData {
   top10: HotWorkItem[]
+  total: number
 }
 
 // ==================== 论坛模块 (Forum - 保留兼容) ====================
@@ -400,14 +475,6 @@ export interface CollectParams {
   poem_id: string
 }
 
-/**
- * 热力榜响应数据
- */
-export interface HotRankData {
-  list: ForumPost[]
-  total: number
-}
-
 // ==================== 收藏夹模块 (collect) ====================
 
 /**
@@ -451,6 +518,23 @@ export interface FavoritePageData {
  */
 export interface UnCollectParams {
   collect_id: string
+}
+
+/**
+ * 取消收藏响应数据
+ */
+export interface UnCollectData {
+  collect_id: string
+  work_id: string
+  new_collect_count: number
+}
+
+/**
+ * 收藏夹列表查询请求参数
+ */
+export interface FavoriteListParams {
+  page?: number
+  title?: string
 }
 
 /**
@@ -542,6 +626,32 @@ export interface SendMessageParams {
  * 中断对话请求参数
  */
 export interface StopQAParams {
+  session_id: string
+  question_id: string
+  num_render: number
+}
+
+/**
+ * 中断对话响应数据
+ */
+export interface StopQAData {
+  session_id: string
+  num_render: number
+}
+
+/**
+ * 继续对话请求参数
+ */
+export interface ContinueQAParams {
+  session_id: string
+  question_id: string
+}
+
+/**
+ * 继续对话响应数据
+ */
+export interface ContinueQAData {
+  session_id: string
   question_id: string
 }
 
@@ -549,6 +659,13 @@ export interface StopQAParams {
  * 删除对话请求参数
  */
 export interface DeleteQAParams {
+  question_id: string
+}
+
+/**
+ * 删除对话响应数据
+ */
+export interface DeleteQAData {
   question_id: string
 }
 

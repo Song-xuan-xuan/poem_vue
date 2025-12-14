@@ -1,4 +1,4 @@
-import { request } from '@/utils/request'
+import { requestBiz as request } from '@/utils/request'
 import type { 
   Result,
   UserInfo,
@@ -14,18 +14,24 @@ import type {
  */
 
 /**
- * 查询登录用户信息
+ * 查询当前登录用户信息（含作品）
+ * GET /api/user/info
  */
-export const getUserInfo = (): Promise<Result<UserInfo>> => {
+export const getCurrentUserInfo = (): Promise<Result<UserProfileData>> => {
   return request.get('/api/user/info')
 }
 
 /**
- * 查询用户主页（根据用户ID）
+ * 查询他人用户主页（根据 user_id）
+ * GET /api/user/info/{user_id}
  */
-export const getUserProfile = (userId: number): Promise<Result<UserProfileData>> => {
+export const getUserInfoById = (userId: string | number): Promise<Result<UserProfileData>> => {
   return request.get(`/api/user/info/${userId}`)
 }
+
+// 兼容旧命名：避免一次性改动太多调用点
+export const getUserInfo = getCurrentUserInfo
+export const getUserProfile = getUserInfoById
 
 /**
  * 修改网名
