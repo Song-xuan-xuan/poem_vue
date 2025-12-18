@@ -172,10 +172,10 @@ export interface PageData<T = any> {
 export type PoemPageData = PageData<PoemListItem>
 
 /**
- * 诗词列表响应数据
+ * 诗词列表响应数据（用于搜索、标签筛选等）
  */
 export interface PoemListData {
-  list: PoemInfo[]
+  list: PoemListItem[]
   total: number
 }
 
