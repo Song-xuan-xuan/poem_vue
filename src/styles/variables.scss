@@ -1,2 +1,127 @@
-// 全局 SCSS 变量
-// 可以在这里定义项目的颜色、尺寸等变量
+// ==================== 诗词社区 - 设计 Token ====================
+// 以"竹"为核心的中华传统美学设计系统
+
+// ==================== 色彩系统 ====================
+// 主色调：竹青系
+$color-bamboo-primary: #5a8c6f;      // 竹青
+$color-bamboo-light: #7ba88a;        // 浅竹青
+$color-bamboo-dark: #3d5a4a;         // 深竹青
+
+// 辅助色：墨色系
+$color-ink-black: #2c3e50;           // 墨黑
+$color-ink-gray: #5a6c7d;            // 墨灰
+$color-ink-light: #95a5a6;           // 淡墨
+
+// 背景色：宣纸系
+$color-paper-white: #faf9f6;         // 宣纸白
+$color-paper-beige: #f5f3ed;         // 米白
+$color-paper-cream: #ebe8df;         // 奶白
+
+// 点缀色
+$color-accent-gold: #d4af37;         // 印章金
+$color-accent-red: #c8553d;          // 朱砂红
+
+// ==================== 渐变背景 ====================
+// 主背景：竹影渐变
+$gradient-bamboo-bg: linear-gradient(
+  135deg,
+  rgba(250, 249, 246, 0.95) 0%,
+  rgba(245, 243, 237, 0.98) 50%,
+  rgba(235, 232, 223, 0.95) 100%
+);
+
+// 卡片背景：半透明白
+$gradient-card-bg: linear-gradient(
+  135deg,
+  rgba(255, 255, 255, 0.85) 0%,
+  rgba(255, 255, 255, 0.75) 100%
+);
+
+// 导航栏背景：毛玻璃效果
+$gradient-nav-bg: linear-gradient(
+  180deg,
+  rgba(255, 255, 255, 0.8) 0%,
+  rgba(255, 255, 255, 0.7) 100%
+);
+
+// ==================== 字体系统 ====================
+// 中文字体栈
+$font-family-chinese: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+// 英文字体栈
+$font-family-english: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+// 诗词专用字体（衬线）
+$font-family-poem: 'STKaiti', 'KaiTi', 'FangSong', serif;
+
+// 字号系统（8px 基准）
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 32px;
+$font-size-4xl: 40px;
+
+// 行高
+$line-height-tight: 1.4;
+$line-height-normal: 1.6;
+$line-height-relaxed: 1.8;
+$line-height-loose: 2.0;
+
+// ==================== 间距系统（4px 步进）====================
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+// ==================== 圆角系统 ====================
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-2xl: 24px;
+$radius-round: 9999px;
+
+// ==================== 阴影系统 ====================
+// 轻量阴影（卡片悬浮）
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+// 毛玻璃阴影
+$shadow-glass: 0 8px 32px rgba(90, 140, 111, 0.15);
+
+// ==================== 模糊效果 ====================
+$blur-sm: blur(8px);
+$blur-md: blur(16px);
+$blur-lg: blur(24px);
+
+// ==================== 过渡动画 ====================
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ==================== 布局约束 ====================
+$container-max-width: 1400px;
+$content-max-width: 1200px;
+$card-max-width: 800px;
+
+// 导航栏高度
+$navbar-height: 64px;
+
+// 响应式断点
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+$breakpoint-desktop: 1400px;
+
+// ==================== Z-index 层级 ====================
+$z-index-background: 0;
+$z-index-content: 1;
+$z-index-card: 10;
+$z-index-navbar: 1000;
+$z-index-dropdown: 1010;
+$z-index-modal: 2000;
+$z-index-toast: 3000;
