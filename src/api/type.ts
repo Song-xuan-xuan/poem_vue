@@ -137,6 +137,17 @@ export interface PoemInfo {
 }
 
 /**
+ * 诗词列表项（用于列表展示，包含部分内容）
+ */
+export interface PoemListItem {
+  id: number
+  title: string
+  author: string
+  part_content: string  // 部分内容预览
+  tags: string[]
+}
+
+/**
  * 分页查询请求参数
  */
 export interface PageParams {
@@ -156,9 +167,9 @@ export interface PageData<T = any> {
 }
 
 /**
- * 诗词分页查询响应
+ * 诗词分页查询响应（列表项）
  */
-export type PoemPageData = PageData<PoemInfo>
+export type PoemPageData = PageData<PoemListItem>
 
 /**
  * 诗词列表响应数据

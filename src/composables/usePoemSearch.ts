@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { PoemInfo, PageData } from '@/api/type'
+import type { PoemListItem, PageData } from '@/api/type'
 import {
   getPoemPage,
   getPoemsByTags,
@@ -18,7 +18,7 @@ export interface SearchParams {
 
 export function usePoemSearch() {
   const loading = ref(false)
-  const poems = ref<PoemInfo[]>([])
+  const poems = ref<PoemListItem[]>([])
   const total = ref(0)
   const currentPage = ref(1)
   const pageSize = ref(20)
@@ -42,11 +42,12 @@ export function usePoemSearch() {
 
   /**
    * 执行搜索
+   * @param append 是否追加数据（用于无限滚动）
    */
-  const search = async () => {
+  const search = async (append = false) => {
     loading.value = true
     try {
-      let result: PageData<PoemInfo>
+      let result: PageData<PoemListItem>
 
       const { keyword, tags, searchType, page, pageSize: size } = searchParams.value
 
@@ -111,14 +112,23 @@ export function usePoemSearch() {
         result = res.data
       }
 
-      poems.value = result.list || []
+      // 追加模式：累加数据
+      if (append) {
+        poems.value = [...poems.value, ...(result.list || [])]
+      } else {
+        // 替换模式：重置数据
+        poems.value = result.list || []
+      }
+
       total.value = result.total || 0
       currentPage.value = result.page_num || 1
       pageSize.value = result.page_size || 20
     } catch (error: any) {
       ElMessage.error(error.message || '搜索失败')
-      poems.value = []
-      total.value = 0
+      if (!append) {
+        poems.value = []
+        total.value = 0
+      }
     } finally {
       loading.value = false
     }
@@ -166,11 +176,12 @@ export function usePoemSearch() {
 
   /**
    * 切换页码
+   * @param append 是否追加数据（用于无限滚动）
    */
-  const changePage = (page: number) => {
+  const changePage = async (page: number, append = true) => {
     searchParams.value.page = page
     currentPage.value = page
-    search()
+    await search(append)
   }
 
   /**

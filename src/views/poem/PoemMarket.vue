@@ -88,7 +88,7 @@
     </el-card>
 
     <!-- 诗词列表 -->
-    <div class="poem-list" v-loading="loading">
+    <div class="poem-list">
       <el-empty v-if="!loading && poems.length === 0" description="暂无诗词数据" />
       <el-row :gutter="20" v-else>
         <el-col
@@ -105,12 +105,9 @@
             @click="goToDetail(poem.id)"
           >
             <h3 class="poem-title">{{ poem.title }}</h3>
-            <p class="poem-author">{{ poem.author }} · {{ poem.dynasty }}</p>
+            <p class="poem-author">{{ poem.author }}</p>
             <div class="poem-preview">
-              <p v-for="(para, index) in poem.paragraphs?.slice(0, 2)" :key="index">
-                {{ para }}
-              </p>
-              <span v-if="(poem.paragraphs?.length || 0) > 2" class="more-text">...</span>
+              {{ poem.part_content }}
             </div>
             <div class="poem-footer" v-if="poem.tags && poem.tags.length > 0">
               <el-tag
@@ -126,27 +123,28 @@
           </el-card>
         </el-col>
       </el-row>
-    </div>
 
-    <!-- 分页（搜索/标签模式下隐藏） -->
-    <div class="pagination-container" v-if="total > 0 && !hasSearchCondition">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 30, 50]"
-        :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
-      />
+      <!-- 加载更多提示 -->
+      <div class="load-more" v-if="poems.length > 0">
+        <div v-if="loading" class="loading-text">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="hasMore" class="load-more-text">
+          向下滚动加载更多
+        </div>
+        <div v-else class="no-more-text">
+          已加载全部诗词
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, StarFilled } from '@element-plus/icons-vue'
+import { Search, StarFilled, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { PoemDetail } from '@/api/type'
 import { getDailyPoem } from '@/api/poem'
@@ -279,17 +277,33 @@ const handleResetSearch = () => {
 }
 
 /**
- * 分页切换
+ * 是否还有更多数据
  */
-const handlePageChange = (page: number) => {
-  changePage(page)
+const hasMore = computed(() => {
+  return currentPage.value < Math.ceil(total.value / pageSize.value)
+})
+
+/**
+ * 加载下一页
+ */
+const loadMore = async () => {
+  if (loading.value || !hasMore.value) return
+
+  await changePage(currentPage.value + 1)
 }
 
 /**
- * 每页条数切换
+ * 滚动事件处理
  */
-const handleSizeChange = (size: number) => {
-  changePageSize(size)
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const documentHeight = document.documentElement.scrollHeight
+
+  // 距离底部 200px 时触发加载
+  if (scrollTop + windowHeight >= documentHeight - 200) {
+    loadMore()
+  }
 }
 
 /**
@@ -312,6 +326,13 @@ const formatDate = (date: Date) => {
 onMounted(() => {
   loadDailyPoem()
   search()
+  // 添加滚动监听
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  // 移除滚动监听
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -513,10 +534,32 @@ onMounted(() => {
     }
   }
 
-  .pagination-container {
-    display: flex;
-    justify-content: center;
-    padding: 20px 0;
+  .load-more {
+    text-align: center;
+    padding: 40px 0;
+    color: #909399;
+    font-size: 14px;
+
+    .loading-text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #409eff;
+
+      .el-icon {
+        font-size: 18px;
+      }
+    }
+
+    .load-more-text {
+      color: #909399;
+    }
+
+    .no-more-text {
+      color: #c0c4cc;
+      font-style: italic;
+    }
   }
 }
 
