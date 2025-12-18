@@ -2,46 +2,46 @@
 // 以"竹"为核心的中华传统美学设计系统
 
 // ==================== 色彩系统 ====================
-// 主色调：竹青系
-$color-bamboo-primary: #5a8c6f;      // 竹青
-$color-bamboo-light: #7ba88a;        // 浅竹青
-$color-bamboo-dark: #3d5a4a;         // 深竹青
+// 主色调：竹青系（更清雅的绿色调）
+$color-bamboo-primary: #6b9080;      // 竹青（提亮，更温和）
+$color-bamboo-light: #a4c3b2;        // 浅竹青（更柔和）
+$color-bamboo-dark: #4a6b5c;         // 深竹青（降低饱和度）
 
-// 辅助色：墨色系
-$color-ink-black: #2c3e50;           // 墨黑
-$color-ink-gray: #5a6c7d;            // 墨灰
-$color-ink-light: #95a5a6;           // 淡墨
+// 辅助色：墨色系（更柔和的灰色调）
+$color-ink-black: #3a4f5c;           // 墨黑（偏蓝灰，更文雅）
+$color-ink-gray: #6b7c8c;            // 墨灰（降低对比度）
+$color-ink-light: #a8b5c0;           // 淡墨（更柔和）
 
-// 背景色：宣纸系
-$color-paper-white: #faf9f6;         // 宣纸白
-$color-paper-beige: #f5f3ed;         // 米白
-$color-paper-cream: #ebe8df;         // 奶白
+// 背景色：宣纸系（更温暖的米色调）
+$color-paper-white: #f8f6f0;         // 宣纸白（偏暖）
+$color-paper-beige: #f2ede3;         // 米白（更温暖）
+$color-paper-cream: #eae5d9;         // 奶白（增加黄调）
 
-// 点缀色
-$color-accent-gold: #d4af37;         // 印章金
-$color-accent-red: #c8553d;          // 朱砂红
+// 点缀色（降低饱和度，更克制）
+$color-accent-gold: #c9a961;         // 印章金（降低饱和度）
+$color-accent-red: #b8705f;          // 朱砂红（降低饱和度，更温和）
 
 // ==================== 渐变背景 ====================
-// 主背景：竹影渐变
+// 主背景：竹影渐变（更温暖的宣纸质感）
 $gradient-bamboo-bg: linear-gradient(
   135deg,
-  rgba(250, 249, 246, 0.95) 0%,
-  rgba(245, 243, 237, 0.98) 50%,
-  rgba(235, 232, 223, 0.95) 100%
+  rgba(248, 246, 240, 0.98) 0%,
+  rgba(242, 237, 227, 1) 50%,
+  rgba(234, 229, 217, 0.98) 100%
 );
 
-// 卡片背景：半透明白
+// 卡片背景：半透明米白（更温暖）
 $gradient-card-bg: linear-gradient(
   135deg,
-  rgba(255, 255, 255, 0.85) 0%,
-  rgba(255, 255, 255, 0.75) 100%
+  rgba(255, 253, 248, 0.9) 0%,
+  rgba(252, 249, 243, 0.85) 100%
 );
 
-// 导航栏背景：毛玻璃效果
+// 导航栏背景：毛玻璃效果（偏暖色调）
 $gradient-nav-bg: linear-gradient(
   180deg,
-  rgba(255, 255, 255, 0.8) 0%,
-  rgba(255, 255, 255, 0.7) 100%
+  rgba(255, 253, 248, 0.85) 0%,
+  rgba(252, 249, 243, 0.8) 100%
 );
 
 // ==================== 字体系统 ====================

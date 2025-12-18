@@ -54,7 +54,7 @@ import NavBar from '@/components/NavBar.vue'
     right: 0;
     bottom: 0;
 
-    // 竹子剪影（左侧）
+    // 竹子剪影（左侧）- 使用新的竹青色
     &::before {
       content: '';
       position: absolute;
@@ -63,12 +63,12 @@ import NavBar from '@/components/NavBar.vue'
       width: 300px;
       height: 100%;
       background:
-        // 竹竿
-        linear-gradient(90deg, transparent 45%, rgba(90, 140, 111, 0.08) 48%, rgba(90, 140, 111, 0.12) 50%, rgba(90, 140, 111, 0.08) 52%, transparent 55%),
-        linear-gradient(90deg, transparent 65%, rgba(90, 140, 111, 0.06) 68%, rgba(90, 140, 111, 0.1) 70%, rgba(90, 140, 111, 0.06) 72%, transparent 75%),
-        linear-gradient(90deg, transparent 80%, rgba(90, 140, 111, 0.07) 83%, rgba(90, 140, 111, 0.11) 85%, rgba(90, 140, 111, 0.07) 87%, transparent 90%);
+        // 竹竿（更柔和的绿色）
+        linear-gradient(90deg, transparent 45%, rgba(107, 144, 128, 0.06) 48%, rgba(107, 144, 128, 0.1) 50%, rgba(107, 144, 128, 0.06) 52%, transparent 55%),
+        linear-gradient(90deg, transparent 65%, rgba(107, 144, 128, 0.05) 68%, rgba(107, 144, 128, 0.08) 70%, rgba(107, 144, 128, 0.05) 72%, transparent 75%),
+        linear-gradient(90deg, transparent 80%, rgba(107, 144, 128, 0.05) 83%, rgba(107, 144, 128, 0.09) 85%, rgba(107, 144, 128, 0.05) 87%, transparent 90%);
       background-size: 100% 100%;
-      opacity: 0.8;
+      opacity: 0.7;
     }
 
     // 竹子剪影（右侧）
@@ -80,32 +80,32 @@ import NavBar from '@/components/NavBar.vue'
       width: 250px;
       height: 100%;
       background:
-        linear-gradient(90deg, transparent 15%, rgba(90, 140, 111, 0.07) 18%, rgba(90, 140, 111, 0.11) 20%, rgba(90, 140, 111, 0.07) 22%, transparent 25%),
-        linear-gradient(90deg, transparent 40%, rgba(90, 140, 111, 0.06) 43%, rgba(90, 140, 111, 0.1) 45%, rgba(90, 140, 111, 0.06) 47%, transparent 50%);
+        linear-gradient(90deg, transparent 15%, rgba(107, 144, 128, 0.05) 18%, rgba(107, 144, 128, 0.09) 20%, rgba(107, 144, 128, 0.05) 22%, transparent 25%),
+        linear-gradient(90deg, transparent 40%, rgba(107, 144, 128, 0.05) 43%, rgba(107, 144, 128, 0.08) 45%, rgba(107, 144, 128, 0.05) 47%, transparent 50%);
       background-size: 100% 100%;
-      opacity: 0.7;
+      opacity: 0.6;
     }
 
-    // 竹叶点缀
+    // 竹叶点缀（更淡雅）
     background-image:
       // 左上竹叶
-      radial-gradient(ellipse 100px 30px at 15% 20%, rgba(90, 140, 111, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 80px 25px at 12% 25%, rgba(90, 140, 111, 0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 90px 28px at 18% 22%, rgba(90, 140, 111, 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 100px 30px at 15% 20%, rgba(107, 144, 128, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 80px 25px at 12% 25%, rgba(107, 144, 128, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 90px 28px at 18% 22%, rgba(107, 144, 128, 0.05) 0%, transparent 60%),
       // 右上竹叶
-      radial-gradient(ellipse 110px 32px at 88% 15%, rgba(90, 140, 111, 0.09) 0%, transparent 60%),
-      radial-gradient(ellipse 85px 26px at 85% 18%, rgba(90, 140, 111, 0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 95px 29px at 91% 17%, rgba(90, 140, 111, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 110px 32px at 88% 15%, rgba(107, 144, 128, 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 85px 26px at 85% 18%, rgba(107, 144, 128, 0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 95px 29px at 91% 17%, rgba(107, 144, 128, 0.06) 0%, transparent 60%),
       // 右下竹叶
-      radial-gradient(ellipse 120px 35px at 90% 85%, rgba(90, 140, 111, 0.1) 0%, transparent 60%),
-      radial-gradient(ellipse 90px 27px at 87% 88%, rgba(90, 140, 111, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 100px 30px at 93% 86%, rgba(90, 140, 111, 0.09) 0%, transparent 60%);
+      radial-gradient(ellipse 120px 35px at 90% 85%, rgba(107, 144, 128, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 90px 27px at 87% 88%, rgba(107, 144, 128, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 100px 30px at 93% 86%, rgba(107, 144, 128, 0.07) 0%, transparent 60%);
     background-size: 100% 100%;
     background-repeat: no-repeat;
-    opacity: 0.9;
+    opacity: 0.8;
   }
 
-  // 水墨晕染层
+  // 水墨晕染层（更柔和）
   .ink-overlay {
     position: absolute;
     top: 0;
@@ -113,8 +113,8 @@ import NavBar from '@/components/NavBar.vue'
     right: 0;
     bottom: 0;
     background:
-      radial-gradient(circle at 10% 20%, rgba(90, 140, 111, 0.02) 0%, transparent 40%),
-      radial-gradient(circle at 90% 70%, rgba(90, 140, 111, 0.03) 0%, transparent 40%);
+      radial-gradient(circle at 10% 20%, rgba(107, 144, 128, 0.015) 0%, transparent 40%),
+      radial-gradient(circle at 90% 70%, rgba(107, 144, 128, 0.02) 0%, transparent 40%);
     pointer-events: none;
   }
 }

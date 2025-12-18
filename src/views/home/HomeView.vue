@@ -17,31 +17,31 @@ const handleGoToAI = () => {
   router.push('/ai')
 }
 
-// 功能特色
+// 功能特色（使用新的配色）
 const features = [
   {
     icon: Reading,
     title: '诗词集市',
     desc: '海量古诗词库，按朝代、作者、标签精准检索',
-    color: '#5a8c6f'
+    color: '#6b9080'  // 竹青
   },
   {
     icon: ChatDotRound,
     title: '论坛社区',
     desc: '与诗友交流创作心得，分享诗词感悟',
-    color: '#7ba88a'
+    color: '#a4c3b2'  // 浅竹青
   },
   {
     icon: Compass,
     title: 'AI 助手',
     desc: '智能对诗、诗词解析、创作辅助',
-    color: '#d4af37'
+    color: '#c9a961'  // 印章金
   },
   {
     icon: TrophyBase,
     title: '成长体系',
     desc: '经验值、等级、成就，见证你的诗词之路',
-    color: '#c8553d'
+    color: '#b8705f'  // 朱砂红
   }
 ]
 </script>
@@ -162,7 +162,7 @@ const features = [
   pointer-events: none;
   z-index: 0;
 
-  // 印章样式
+  // 印章样式（更柔和的朱砂红）
   .seal {
     position: absolute;
     width: 60px;
@@ -176,8 +176,8 @@ const features = [
     font-weight: bold;
     font-family: $font-family-poem;
     border: 3px solid $color-accent-red;
-    box-shadow: 0 4px 12px rgba(200, 85, 61, 0.3);
-    opacity: 0.85;
+    box-shadow: 0 4px 12px rgba(184, 112, 95, 0.25);
+    opacity: 0.8;
     transform: rotate(-5deg);
     animation: sealFade 3s ease-in-out infinite;
 
@@ -198,7 +198,7 @@ const features = [
     }
   }
 
-  // 竹节装饰
+  // 竹节装饰（使用新的竹青色）
   .bamboo-node {
     position: absolute;
     width: 8px;
@@ -206,11 +206,11 @@ const features = [
     background: linear-gradient(
       180deg,
       transparent 0%,
-      rgba(90, 140, 111, 0.15) 10%,
-      rgba(90, 140, 111, 0.25) 48%,
-      rgba(90, 140, 111, 0.3) 50%,
-      rgba(90, 140, 111, 0.25) 52%,
-      rgba(90, 140, 111, 0.15) 90%,
+      rgba(107, 144, 128, 0.12) 10%,
+      rgba(107, 144, 128, 0.2) 48%,
+      rgba(107, 144, 128, 0.25) 50%,
+      rgba(107, 144, 128, 0.2) 52%,
+      rgba(107, 144, 128, 0.12) 90%,
       transparent 100%
     );
     border-radius: 4px;
@@ -223,7 +223,7 @@ const features = [
       left: -2px;
       right: -2px;
       height: 3px;
-      background: rgba(90, 140, 111, 0.4);
+      background: rgba(107, 144, 128, 0.35);
       transform: translateY(-50%);
     }
 
@@ -255,13 +255,13 @@ const features = [
   }
 }
 
-// 印章淡入淡出动画
+// 印章淡入淡出动画（更柔和）
 @keyframes sealFade {
   0%, 100% {
-    opacity: 0.85;
+    opacity: 0.8;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.55;
   }
 }
 
@@ -286,14 +286,14 @@ const features = [
   flex-direction: column;
   gap: $spacing-xl;
 
-  // 徽章
+  // 徽章（使用新的竹青色）
   .hero-badge {
     display: inline-flex;
     align-items: center;
     gap: $spacing-sm;
     padding: $spacing-sm $spacing-lg;
-    background: rgba(90, 140, 111, 0.1);
-    border: 1px solid rgba(90, 140, 111, 0.2);
+    background: rgba(107, 144, 128, 0.08);
+    border: 1px solid rgba(107, 144, 128, 0.18);
     border-radius: $radius-round;
     width: fit-content;
 
@@ -340,14 +340,14 @@ const features = [
     }
   }
 
-  // 诗词名句装饰
+  // 诗词名句装饰（使用新的竹青色）
   .poem-quote {
     position: relative;
     padding: $spacing-lg $spacing-xl;
     background: linear-gradient(
       135deg,
-      rgba(90, 140, 111, 0.05) 0%,
-      rgba(90, 140, 111, 0.08) 100%
+      rgba(107, 144, 128, 0.04) 0%,
+      rgba(107, 144, 128, 0.07) 100%
     );
     border-left: 4px solid $color-bamboo-primary;
     border-radius: $radius-md;
