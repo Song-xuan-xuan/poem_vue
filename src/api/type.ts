@@ -223,11 +223,9 @@ export interface PoemDetail {
 
 /**
  * 每日一首响应数据
+ * 直接返回诗词详情，不嵌套
  */
-export interface DailyPoemData {
-  poem: PoemDetail
-  date: string
-}
+export type DailyPoemData = PoemDetail
 
 // ==================== Work 模块 (帖子/作品) ====================
 

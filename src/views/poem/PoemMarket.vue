@@ -25,18 +25,27 @@
           </el-input>
         </div>
 
-        <!-- 标签筛选 -->
+        <!-- 标签筛选 - 分类选择 -->
         <div class="tag-filter">
           <span class="filter-label">标签筛选：</span>
-          <el-check-tag
-            v-for="tag in commonTags"
-            :key="tag"
-            :checked="selectedTags.includes(tag)"
-            @change="handleTagChange(tag)"
-            class="tag-item"
-          >
-            {{ tag }}
-          </el-check-tag>
+          <div class="tag-selects">
+            <el-select
+              v-for="(tags, category) in tagCategories"
+              :key="category"
+              v-model="selectedTagsByCategory[category]"
+              :placeholder="category"
+              clearable
+              @change="handleCategoryTagChange"
+              class="category-select"
+            >
+              <el-option
+                v-for="tag in tags"
+                :key="tag"
+                :label="tag"
+                :value="tag"
+              />
+            </el-select>
+          </div>
           <el-button link type="primary" @click="handleResetSearch" v-if="hasSearchCondition">
             重置筛选
           </el-button>
@@ -119,8 +128,8 @@
       </el-row>
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination-container" v-if="total > 0">
+    <!-- 分页（搜索/标签模式下隐藏） -->
+    <div class="pagination-container" v-if="total > 0 && !hasSearchCondition">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -145,24 +154,60 @@ import { usePoemSearch } from '@/composables/usePoemSearch'
 
 const router = useRouter()
 
-// 常用标签
-const commonTags = ref([
-  '春天',
-  '夏天',
-  '秋天',
-  '冬天',
-  '山水',
-  '田园',
-  '边塞',
-  '咏物',
-  '咏史',
-  '怀古',
-  '送别',
-  '思乡',
-  '爱情',
-  '友情',
-  '励志'
-])
+// 标签分类数据
+const tagCategories = ref<Record<string, string[]>>({
+  '体裁类': [
+    '七言古诗', '七言律诗', '七言绝句',
+    '五言古诗', '五言律诗', '五言绝句',
+    '乐府', '新乐府辞', '杂曲歌辞', '相和歌辞', '清商曲辞', '鼓吹曲辞', '近代曲辞',
+    '古体', '咏物诗', '组诗', '长诗'
+  ],
+  '意象类': [
+    '山', '水', '花', '草', '树', '雨', '雪', '风', '马', '鸟',
+    '月亮', '梅花', '荷花', '植物', '塔',
+    '黄河', '长江', '洞庭湖',
+    '泰山', '黄山', '庐山', '峨眉山', '终南山',
+    '黄鹤楼', '岳阳楼'
+  ],
+  '情感类': [
+    '喜悦', '悲伤', '伤怀', '孤独', '哀怨', '愁思', '感伤', '感叹', '感慨',
+    '思乡', '思亲', '思归', '思念', '怀念', '依恋',
+    '忧国忧民', '忧思', '愤懑', '怅惘', '失意', '惜别', '惜时', '惜春',
+    '热爱', '爱国', '爱情', '友情', '母爱', '相思',
+    '励志', '慰藉', '慰勉', '豪放', '豪迈', '婉约',
+    '怨情', '宫怨', '闺怨', '悼亡', '托物寄情'
+  ],
+  '主题类': [
+    '怀古', '咏史', '咏史怀古', '吊古伤今', '凭吊古迹',
+    '边塞', '戍边', '战争', '征人', '将士',
+    '田园', '隐逸', '归隐', '隐士',
+    '咏物', '咏叹', '题咏', '题画',
+    '讽喻', '讽刺', '托古讽今', '议论', '哲理',
+    '抒怀', '抒志', '即景抒情', '触景感怀', '寓人', '寓言',
+    '叙事', '写人', '待客', '访友', '寻访',
+    '离别', '送别', '赠别', '酬和', '酬答', '酬赠', '和诗', '唱和',
+    '羁旅', '旅途', '游历', '纪游',
+    '人生', '人格', '抱负', '怀才不遇', '仕途', '贬谪', '迁谪',
+    '豪侠', '游侠', '狩猎', '生活', '宴会', '宴饮', '早朝', '应制',
+    '考试', '新婚', '妇女', '女子', '宫廷'
+  ],
+  '场景/时节类': [
+    '春天', '夏天', '秋天', '冬天',
+    '春节', '中秋节', '寒食节', '清明节', '重阳节',
+    '月下', '月夜', '秋雨', '风雨',
+    '寺庙', '名楼、庙宇', '家乡', '地名', '地点', '景点'
+  ],
+  '手法/风格类': [
+    '写景', '描写山', '描写水', '写塔', '写树', '写花', '写草', '写雨', '写雪', '写风', '写马', '写鸟',
+    '拟古', '援引', '用典', '典故',
+    '赞美', '赞扬', '赞颂', '规劝',
+    '记梦', '相和', '鼓吹', '清商',
+    '豪放', '婉约', '豪迈', '直白', '含蓄'
+  ]
+})
+
+// 各分类已选中的标签
+const selectedTagsByCategory = ref<Record<string, string>>({})
 
 // 使用搜索 composable
 const {
@@ -185,7 +230,11 @@ const {
 // 本地搜索状态
 const keyword = ref('')
 const searchType = ref<'title' | 'paragraph' | 'all'>('all')
-const selectedTags = ref<string[]>([])
+
+// 计算所有已选中的标签（从各分类中提取）
+const selectedTags = computed(() => {
+  return Object.values(selectedTagsByCategory.value).filter(tag => tag && tag.trim())
+})
 
 // 每日一首
 const dailyPoem = ref<PoemDetail | null>(null)
@@ -213,15 +262,9 @@ const handleSearch = () => {
 }
 
 /**
- * 标签选择变化
+ * 分类标签变化
  */
-const handleTagChange = (tag: string) => {
-  const index = selectedTags.value.indexOf(tag)
-  if (index > -1) {
-    selectedTags.value.splice(index, 1)
-  } else {
-    selectedTags.value.push(tag)
-  }
+const handleCategoryTagChange = () => {
   handleSearch()
 }
 
@@ -231,7 +274,7 @@ const handleTagChange = (tag: string) => {
 const handleResetSearch = () => {
   keyword.value = ''
   searchType.value = 'all'
-  selectedTags.value = []
+  selectedTagsByCategory.value = {}
   resetSearch()
 }
 
@@ -293,9 +336,8 @@ onMounted(() => {
 
       .tag-filter {
         display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
+        flex-direction: column;
+        gap: 12px;
 
         .filter-label {
           font-size: 14px;
@@ -303,13 +345,21 @@ onMounted(() => {
           font-weight: 500;
         }
 
-        .tag-item {
-          cursor: pointer;
-          transition: all 0.3s;
+        .tag-selects {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          width: 100%;
 
-          &:hover {
-            transform: translateY(-2px);
+          .category-select {
+            flex: 1;
+            min-width: 180px;
+            max-width: 250px;
           }
+        }
+
+        .el-button {
+          align-self: flex-start;
         }
       }
     }

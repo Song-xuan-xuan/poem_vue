@@ -85,7 +85,17 @@
                 <span class="message-sender">
                   {{ message.role === 'user' ? (userStore.userInfo?.name || '我') : 'AI 助手' }}
                 </span>
-                <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+                <div class="message-header-right">
+                  <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+                  <el-button
+                    v-if="message.role === 'assistant'"
+                    text
+                    size="small"
+                    :icon="Delete"
+                    @click="handleDeleteMessage(message.id.replace('_a', ''))"
+                    title="删除该轮对话"
+                  />
+                </div>
               </div>
               <div v-if="message.content" class="message-body" v-html="renderMarkdown(message.content)"></div>
 
@@ -219,7 +229,7 @@ import {
   renameSession,
   deleteSession
 } from '@/api/session'
-import { getQAList, streamDialogWithFetch, stopQA } from '@/api/chat'
+import { getQAList, streamDialogWithFetch, stopQA, deleteQA } from '@/api/chat'
 import { useUserStore } from '@/stores/user'
 import { useMultimodalInput } from '@/composables/useMultimodalInput'
 import { useBilibiliRecommend } from '@/composables/useBilibiliRecommend'
@@ -229,9 +239,9 @@ import 'highlight.js/styles/github-dark.css'
 
 const userStore = useUserStore()
 
-// Markdown 渲染器
+// Markdown 渲染器（收紧HTML渲染策略）
 const md: MarkdownIt = new MarkdownIt({
-  html: true,
+  html: false,  // 禁止渲染HTML标签
   linkify: true,
   typographer: true,
   highlight: function (str: string, lang: string): string {
@@ -415,6 +425,37 @@ const handleDeleteSession = async (sessionId: string) => {
     
     // 刷新列表
     await loadSessions()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+/**
+ * 删除对话（QA对）
+ * DELETE /api/qa/delete { question_id }
+ */
+const handleDeleteMessage = async (questionId: string) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定删除这轮对话吗？',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    // 调用删除接口
+    await deleteQA({ question_id: questionId })
+    ElMessage.success('删除成功')
+    
+    // 刷新消息列表
+    if (currentSessionId.value) {
+      await loadMessages(currentSessionId.value)
+    }
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '删除失败')
@@ -1006,13 +1047,19 @@ onMounted(() => {
           .message-header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
             margin-bottom: 8px;
 
             .message-sender {
               font-size: 14px;
               font-weight: 600;
               color: #303133;
+            }
+
+            .message-header-right {
+              display: flex;
+              align-items: center;
+              gap: 8px;
             }
 
             .message-time {

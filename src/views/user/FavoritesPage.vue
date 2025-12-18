@@ -90,12 +90,10 @@
       <div class="pagination-container" v-if="total > 0">
         <el-pagination
           v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[12, 24, 36, 48]"
+          :page-size="pageSize"
           :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
+          layout="total, prev, pager, next, jumper"
           @current-change="handlePageChange"
-          @size-change="handleSizeChange"
         />
       </div>
     </div>
@@ -123,7 +121,7 @@ const loading = ref(false)
 const favorites = ref<FavoriteItem[]>([])
 const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(10)  // 固定10条/页
 
 /**
  * 加载收藏列表
@@ -194,15 +192,6 @@ const handleUnCollect = async (collectId: string, title: string) => {
  */
 const handlePageChange = (page: number) => {
   currentPage.value = page
-  loadFavorites()
-}
-
-/**
- * 每页条数切换
- */
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1
   loadFavorites()
 }
 

@@ -14,6 +14,17 @@ const menuItems = [
   { name: 'AI助手', path: '/ai', icon: 'ChatLineRound' }
 ]
 
+// 未登录点击导航项时引导登录
+const handleMenuClick = (path: string) => {
+  const needsAuth = ['/poem/market', '/forum', '/ai']
+  if (needsAuth.includes(path) && !userStore.isLoggedIn()) {
+    ElMessage.warning('请先登录后访问')
+    router.push('/auth/login')
+    return false
+  }
+  return true
+}
+
 // 用户菜单项
 const handleCommand = (command: string) => {
   switch (command) {
@@ -22,9 +33,6 @@ const handleCommand = (command: string) => {
       break
     case 'favorites':
       router.push('/user/favorites')
-      break
-    case 'settings':
-      router.push('/user/settings')
       break
     case 'logout':
       userStore.logout()
@@ -57,6 +65,7 @@ const goToLogin = () => {
         v-for="item in menuItems"
         :key="item.path"
         :index="item.path"
+        @click="handleMenuClick(item.path)"
       >
         <el-icon><component :is="item.icon" /></el-icon>
         <span>{{ item.name }}</span>
@@ -81,10 +90,6 @@ const goToLogin = () => {
             <el-dropdown-item command="favorites">
               <el-icon><Star /></el-icon>
               我的收藏
-            </el-dropdown-item>
-            <el-dropdown-item command="settings">
-              <el-icon><Setting /></el-icon>
-              账号设置
             </el-dropdown-item>
             <el-dropdown-item divided command="logout">
               <el-icon><SwitchButton /></el-icon>

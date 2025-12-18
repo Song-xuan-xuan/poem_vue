@@ -62,7 +62,7 @@ const router = createRouter({
           component: PoemMarket,
           meta: { 
             title: '诗词集市',
-            requiresAuth: false
+            requiresAuth: true  // 需要登录
           }
         },
         {
@@ -71,7 +71,7 @@ const router = createRouter({
           component: PoemDetail,
           meta: { 
             title: '诗词详情',
-            requiresAuth: false
+            requiresAuth: true  // 需要登录
           }
         },
 
@@ -82,7 +82,7 @@ const router = createRouter({
           component: ForumHome,
           meta: { 
             title: '论坛社区',
-            requiresAuth: false
+            requiresAuth: true  // 需要登录
           }
         },
         {
@@ -91,7 +91,7 @@ const router = createRouter({
           component: PostDetail,
           meta: { 
             title: '帖子详情',
-            requiresAuth: false
+            requiresAuth: true  // 需要登录
           }
         },
 
@@ -111,7 +111,7 @@ const router = createRouter({
           component: UserProfile,
           meta: { 
             title: '用户主页',
-            requiresAuth: false
+            requiresAuth: true  // 需要登录
           }
         },
         {
