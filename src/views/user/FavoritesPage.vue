@@ -86,24 +86,27 @@
         </el-card>
       </div>
 
-      <!-- 分页 -->
-      <div class="pagination-container" v-if="total > 0">
-        <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="total"
-          layout="total, prev, pager, next, jumper"
-          @current-change="handlePageChange"
-        />
+      <!-- 加载更多提示 -->
+      <div class="load-more" v-if="favorites.length > 0">
+        <div v-if="loading" class="loading-text">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="hasMore" class="load-more-text">
+          向下滚动加载更多
+        </div>
+        <div v-else class="no-more-text">
+          已加载全部收藏
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Delete, Star, ChatDotRound, Clock } from '@element-plus/icons-vue'
+import { Search, Delete, Star, Collection, Clock, Loading } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FavoriteItem } from '@/api/type'
 import { getFavorites, unCollect } from '@/api/favorite'
@@ -124,9 +127,17 @@ const currentPage = ref(1)
 const pageSize = ref(10)  // 固定10条/页
 
 /**
- * 加载收藏列表
+ * 是否还有更多数据
  */
-const loadFavorites = async () => {
+const hasMore = computed(() => {
+  return currentPage.value * pageSize.value < total.value
+})
+
+/**
+ * 加载收藏列表
+ * @param append 是否追加数据
+ */
+const loadFavorites = async (append = false) => {
   if (!userStore.isLoggedIn()) {
     ElMessage.warning('请先登录')
     router.push('/auth/login')
@@ -139,12 +150,22 @@ const loadFavorites = async () => {
       page: currentPage.value,
       title: searchKeyword.value.trim() || undefined
     })
-    favorites.value = res.data.items || []
+
+    // 追加模式：累加数据
+    if (append) {
+      favorites.value = [...favorites.value, ...(res.data.items || [])]
+    } else {
+      // 替换模式：重置数据
+      favorites.value = res.data.items || []
+    }
+
     total.value = res.data.total || 0
   } catch (error: any) {
     ElMessage.error(error.message || '加载收藏列表失败')
-    favorites.value = []
-    total.value = 0
+    if (!append) {
+      favorites.value = []
+      total.value = 0
+    }
   } finally {
     loading.value = false
   }
@@ -156,8 +177,32 @@ const loadFavorites = async () => {
 const handleSearch = async () => {
   currentPage.value = 1
   searchLoading.value = true
-  await loadFavorites()
+  await loadFavorites(false)
   searchLoading.value = false
+}
+
+/**
+ * 加载下一页
+ */
+const loadMore = async () => {
+  if (loading.value || !hasMore.value) return
+
+  currentPage.value++
+  await loadFavorites(true)
+}
+
+/**
+ * 滚动事件处理
+ */
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const documentHeight = document.documentElement.scrollHeight
+
+  // 距离底部 200px 时触发加载
+  if (scrollTop + windowHeight >= documentHeight - 200) {
+    loadMore()
+  }
 }
 
 /**
@@ -178,21 +223,14 @@ const handleUnCollect = async (collectId: string, title: string) => {
     await unCollect(collectId)
     ElMessage.success('取消收藏成功')
 
-    // 刷新列表
-    await loadFavorites()
+    // 从当前列表中移除该项
+    favorites.value = favorites.value.filter(item => item.collect_id !== collectId)
+    total.value--
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '取消收藏失败')
     }
   }
-}
-
-/**
- * 分页切换
- */
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  loadFavorites()
 }
 
 /**
@@ -229,6 +267,13 @@ const formatCollectTime = (dateStr: string) => {
 
 onMounted(() => {
   loadFavorites()
+  // 添加滚动监听
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  // 移除滚动监听
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -386,10 +431,32 @@ onMounted(() => {
       }
     }
 
-    .pagination-container {
-      display: flex;
-      justify-content: center;
-      padding: 20px 0;
+    .load-more {
+      text-align: center;
+      padding: 40px 0;
+      color: #909399;
+      font-size: 14px;
+
+      .loading-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #409eff;
+
+        .el-icon {
+          font-size: 18px;
+        }
+      }
+
+      .load-more-text {
+        color: #909399;
+      }
+
+      .no-more-text {
+        color: #c0c4cc;
+        font-style: italic;
+      }
     }
   }
 }
