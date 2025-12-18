@@ -15,10 +15,11 @@ import {
 } from '@element-plus/icons-vue'
 import type { UploadProps, FormInstance, FormRules } from 'element-plus'
 import type { UserPoem, UserProfileData } from '@/api/type'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const route = useRoute()
+const router = useRouter()
 
 const viewedUser = ref<UserProfileData | null>(null)
 const isSelf = computed(() => !route.params.id)
@@ -240,6 +241,11 @@ const formatPublishTime = (timestamp: number) => {
   })
 }
 
+// 跳转到作品详情
+const goToWorkDetail = (workId: string) => {
+  router.push(`/forum/post/${workId}`)
+}
+
 // 登出
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', {
@@ -348,11 +354,12 @@ watch(
         <el-empty v-else-if="myWorks.length === 0" description="暂无作品" />
         
         <div v-else class="works-list">
-          <el-card 
-            v-for="work in myWorks" 
+          <el-card
+            v-for="work in myWorks"
             :key="work.id"
             shadow="hover"
             class="work-card"
+            @click="goToWorkDetail(work.id)"
           >
             <h3>{{ work.title }}</h3>
             <div class="work-meta">
