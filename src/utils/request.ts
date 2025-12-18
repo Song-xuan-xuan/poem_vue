@@ -56,6 +56,12 @@ function attachInterceptors(instance: AxiosInstance) {
       if (userStore.accessToken) {
         config.headers.Authorization = `Bearer ${userStore.accessToken}`
       }
+
+      // 如果是 FormData 上传，移除默认的 JSON 头，让浏览器自动带 boundary
+      if (config.data instanceof FormData && config.headers) {
+        delete (config.headers as any)['Content-Type']
+        delete (config.headers as any)['content-type']
+      }
       
       return config
     },

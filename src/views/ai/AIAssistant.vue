@@ -6,68 +6,49 @@
         <h3>会话列表</h3>
         <el-button
           type="primary"
-          :icon="Plus"
-          circle
           size="small"
-          @click="handleCreateSession"
+          :icon="Plus"
           :loading="createLoading"
-        />
+          @click="handleCreateSession"
+        >
+          新建
+        </el-button>
       </div>
 
-      <div v-loading="sessionsLoading" class="session-list">
-        <el-empty v-if="!sessionsLoading && sessions.length === 0" description="暂无会话" />
-        
+      <div class="session-list" v-loading="sessionsLoading">
         <div
           v-for="session in sessions"
           :key="session.session_id"
           class="session-item"
-          :class="{ active: currentSessionId === session.session_id }"
+          :class="{ active: session.session_id === currentSessionId }"
           @click="handleSelectSession(session.session_id)"
         >
-          <div v-if="editingSessionId === session.session_id" class="session-edit" @click.stop>
-            <el-input
-              v-model="editingTitle"
-              size="small"
-              @keyup.enter="handleSaveTitle(session.session_id)"
-              @blur="handleCancelEdit"
-            />
-            <div class="edit-actions">
-              <el-button
-                size="small"
-                type="primary"
-                text
-                :icon="Check"
-                @click="handleSaveTitle(session.session_id)"
-              />
-              <el-button
-                size="small"
-                text
-                :icon="Close"
-                @click="handleCancelEdit"
-              />
-            </div>
+          <div class="session-info">
+            <template v-if="editingSessionId === session.session_id">
+              <div class="session-edit">
+                <el-input v-model="editingTitle" size="small" placeholder="输入会话标题" />
+                <div class="edit-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    :icon="Check"
+                    @click.stop="handleConfirmEdit(session.session_id)"
+                  />
+                  <el-button size="small" :icon="Close" @click.stop="handleCancelEdit" />
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="session-title">{{ session.name }}</div>
+              <div class="session-meta">
+                <span>{{ formatTime(session.create_time) }}</span>
+              </div>
+            </template>
           </div>
 
-          <div v-else class="session-info">
-            <div class="session-title">{{ session.name }}</div>
-            <div class="session-meta">
-              <span>{{ formatTime(session.create_time) }}</span>
-            </div>
-          </div>
-
-          <div v-if="editingSessionId !== session.session_id" class="session-actions" @click.stop>
-            <el-button
-              text
-              :icon="Edit"
-              size="small"
-              @click="handleEditTitle(session.session_id, session.name)"
-            />
-            <el-button
-              text
-              :icon="Delete"
-              size="small"
-              @click="handleDeleteSession(session.session_id)"
-            />
+          <div class="session-actions">
+            <el-button text :icon="Edit" @click.stop="handleEditTitle(session)" />
+            <el-button text :icon="Delete" @click.stop="handleDeleteSession(session.session_id)" />
           </div>
         </div>
       </div>
@@ -75,6 +56,8 @@
 
     <!-- 右侧：聊天窗口 -->
     <div class="chat-container">
+      
+
       <div v-if="!currentSessionId" class="chat-empty">
         <el-empty description="请选择或创建一个会话开始对话">
           <el-button type="primary" @click="handleCreateSession">创建新会话</el-button>
@@ -104,7 +87,23 @@
                 </span>
                 <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
               </div>
-              <div class="message-body" v-html="renderMarkdown(message.content)"></div>
+              <div v-if="message.content" class="message-body" v-html="renderMarkdown(message.content)"></div>
+
+              <div
+                v-if="message.recommendation && message.recommendation.name && message.recommendation.url"
+                class="recommend-card"
+              >
+                <div class="recommend-title">🎬 B站视频推荐</div>
+                <div class="recommend-name">{{ message.recommendation.name }}</div>
+                <a
+                  class="recommend-link"
+                  :href="message.recommendation.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  🔗 点击观看
+                </a>
+              </div>
             </div>
           </div>
 
@@ -125,33 +124,68 @@
 
         <!-- 输入区域 -->
         <div class="input-area">
-          <el-input
-            v-model="inputMessage"
-            type="textarea"
-            :rows="3"
-            placeholder="输入消息... (Ctrl+Enter 发送)"
-            :disabled="isSending || isStreaming"
-            @keydown.ctrl.enter="handleSendMessage"
-          />
-          <div class="input-actions">
-            <el-button
-              v-if="isStreaming"
-              type="danger"
-              :icon="VideoPause"
-              @click="handleStopGeneration"
-            >
-              停止生成
-            </el-button>
-            <el-button
-              v-else
-              type="primary"
-              :icon="Promotion"
-              @click="handleSendMessage"
-              :loading="isSending"
-              :disabled="!inputMessage.trim()"
-            >
-              发送
-            </el-button>
+          <div class="input-wrapper">
+            <el-input
+              v-model="inputMessage"
+              type="textarea"
+              :rows="3"
+              placeholder="输入消息... (Enter 发送)"
+              :disabled="isSending || isStreaming"
+              @keydown.enter="handleSendMessage"
+            />
+
+            <div class="input-icons">
+              <el-upload
+                :before-upload="handleBeforeOcrUpload"
+                :show-file-list="false"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+              >
+                <el-button
+                  circle
+                  plain
+                  :icon="Folder"
+                  :loading="ocrLoading"
+                  :disabled="isSending || isStreaming"
+                ></el-button>
+              </el-upload>
+
+              <el-button
+                v-if="!isRecording"
+                circle
+                plain
+                :icon="Microphone"
+                :disabled="isSending || isStreaming"
+                @click="startRecording"
+              ></el-button>
+              <el-button
+                v-else
+                circle
+                type="warning"
+                :icon="VideoPause"
+                :loading="audioLoading"
+                @click="stopRecording"
+              ></el-button>
+
+              <el-button
+                v-if="isStreaming"
+                circle
+                type="danger"
+                :icon="VideoPause"
+                @click="handleStopGeneration"
+              ></el-button>
+              <el-button
+                v-else
+                circle
+                type="primary"
+                :icon="Promotion"
+                @click="handleSendMessage"
+                :loading="isSending"
+                :disabled="!inputMessage.trim()"
+              ></el-button>
+            </div>
+
+
+
           </div>
         </div>
       </template>
@@ -160,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import {
   Plus,
   Edit,
@@ -169,10 +203,16 @@ import {
   Close,
   Promotion,
   VideoPause,
-  ChatLineSquare
+  ChatLineSquare,
+  Microphone,
+  VideoPlay,
+  Folder,
+  Refresh,
+  InfoFilled
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { SessionItem, QAPair, ChatMessage } from '@/api/type'
+import type { UploadProps } from 'element-plus'
 import {
   getSessionList,
   createSession,
@@ -181,6 +221,8 @@ import {
 } from '@/api/session'
 import { getQAList, streamDialogWithFetch, stopQA } from '@/api/chat'
 import { useUserStore } from '@/stores/user'
+import { useMultimodalInput } from '@/composables/useMultimodalInput'
+import { useBilibiliRecommend } from '@/composables/useBilibiliRecommend'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
@@ -212,20 +254,96 @@ const createLoading = ref(false)
 const editingSessionId = ref<string>('')
 const editingTitle = ref('')
 
+interface RecommendInfo {
+  name: string | null
+  url: string | null
+}
+
+type ChatMessageWithRecommend = ChatMessage & { recommendation?: RecommendInfo | null }
+
 // 消息列表（使用 QAPair 作为消息类型）
 const messagesLoading = ref(false)
-const messages = ref<any[]>([])
+const messages = ref<ChatMessageWithRecommend[]>([])
 const messageListRef = ref<HTMLDivElement>()
 
 // 消息发送
 const inputMessage = ref('')
 const isSending = ref(false)
+const lastUserQuery = ref('') // 记录最后一次用户问题，用于 B站推荐
 
 // 流式输出
 const isStreaming = ref(false)
 const streamingContent = ref('')
 const currentStreamingMessageId = ref<string>('')
 const currentQuestionId = ref<string>('') // 后端的 question_id
+
+// 多模态输入
+const {
+  ocrLoading,
+  audioLoading,
+  runOcr,
+  runAudioTranscribe
+} = useMultimodalInput()
+
+// 录音状态
+const isRecording = ref(false)
+const mediaRecorderRef = ref<MediaRecorder | null>(null)
+const audioStreamRef = ref<MediaStream | null>(null)
+const audioChunks = ref<Blob[]>([])
+const selectedMimeType = ref<string>('')
+
+// B站推荐
+const {
+  recommendLoading,
+  fetchBilibili
+} = useBilibiliRecommend()
+
+/**
+ * 选中会话并加载消息
+ */
+const handleSelectSession = async (sessionId: string) => {
+  if (currentSessionId.value === sessionId && messages.value.length) return
+  currentSessionId.value = sessionId
+  await loadMessages(sessionId)
+}
+
+/**
+ * 重新加载当前会话
+ */
+const handleRestartSession = async () => {
+  if (!currentSessionId.value) return
+  await loadMessages(currentSessionId.value)
+}
+
+/**
+ * 编辑会话标题
+ */
+const handleEditTitle = (session: SessionItem) => {
+  editingSessionId.value = session.session_id
+  editingTitle.value = session.name
+}
+
+const handleCancelEdit = () => {
+  editingSessionId.value = ''
+  editingTitle.value = ''
+}
+
+const handleConfirmEdit = async (sessionId: string) => {
+  const name = editingTitle.value.trim()
+  if (!name) {
+    ElMessage.warning('标题不能为空')
+    return
+  }
+  try {
+    await renameSession({ session_id: sessionId, name })
+    ElMessage.success('修改成功')
+    await loadSessions()
+    editingSessionId.value = ''
+    editingTitle.value = ''
+  } catch (error: any) {
+    ElMessage.error(error.message || '重命名失败')
+  }
+}
 
 /**
  * 加载会话列表
@@ -255,15 +373,13 @@ const loadSessions = async () => {
 const handleCreateSession = async () => {
   createLoading.value = true
   try {
-    // 生成 UUID
     const sessionId = crypto.randomUUID()
     const res = await createSession({
       session_id: sessionId,
       name: `新对话 ${new Date().toLocaleString()}`
     })
     ElMessage.success('创建成功')
-    
-    // 刷新列表并选中新会话
+
     await loadSessions()
     handleSelectSession(res.data.session_id)
   } catch (error: any) {
@@ -271,60 +387,6 @@ const handleCreateSession = async () => {
   } finally {
     createLoading.value = false
   }
-}
-
-/**
- * 选择会话
- */
-const handleSelectSession = async (sessionId: string) => {
-  if (currentSessionId.value === sessionId) return
-  
-  currentSessionId.value = sessionId
-  await loadMessages(sessionId)
-}
-
-/**
- * 编辑会话标题
- */
-const handleEditTitle = (sessionId: string, currentTitle: string) => {
-  editingSessionId.value = sessionId
-  editingTitle.value = currentTitle
-}
-
-/**
- * 保存会话标题
- */
-const handleSaveTitle = async (sessionId: string) => {
-  if (!editingTitle.value.trim()) {
-    ElMessage.warning('标题不能为空')
-    return
-  }
-
-  try {
-    await renameSession({
-      session_id: sessionId,
-      name: editingTitle.value.trim()
-    })
-    ElMessage.success('重命名成功')
-    
-    // 更新本地列表
-    const session = sessions.value.find(s => s.session_id === sessionId)
-    if (session) {
-      session.name = editingTitle.value.trim()
-    }
-    
-    handleCancelEdit()
-  } catch (error: any) {
-    ElMessage.error(error.message || '重命名失败')
-  }
-}
-
-/**
- * 取消编辑
- */
-const handleCancelEdit = () => {
-  editingSessionId.value = ''
-  editingTitle.value = ''
 }
 
 /**
@@ -383,7 +445,8 @@ const loadMessages = async (sessionId: string) => {
         id: `${qa.question_id}_a`,
         role: 'assistant',
         content: qa.answer,
-        timestamp: qa.timestamp
+        timestamp: qa.timestamp,
+        recommendation: null
       }
     ])
     
@@ -406,11 +469,12 @@ const handleSendMessage = async () => {
   if (!inputMessage.value.trim() || !currentSessionId.value) return
   
   const userMessage = inputMessage.value.trim()
+  lastUserQuery.value = userMessage // 记录最后一次问题
   inputMessage.value = ''
   
   // 添加用户消息到列表
   const userMsgId = `user_${Date.now()}`
-  const userMsg: ChatMessage = {
+  const userMsg: ChatMessageWithRecommend = {
     id: userMsgId,
     role: 'user',
     content: userMessage,
@@ -453,16 +517,32 @@ const handleSendMessage = async () => {
         }
         
         if (isFinal) {
-          // 流结束，使用完整内容
           if (fullContent) {
-            const assistantMsg: ChatMessage = {
+            const assistantMsg: ChatMessageWithRecommend = {
               id: currentStreamingMessageId.value,
               role: 'assistant',
               content: fullContent,
-              timestamp: Math.floor(Date.now() / 1000)
+              timestamp: Math.floor(Date.now() / 1000),
+              recommendation: null
             }
             messages.value.push(assistantMsg)
           }
+
+          // 独立获取 B站推荐并渲染在回复下方
+          try {
+            const recommend = await fetchBilibili(currentSessionId.value, userMessage)
+            if (recommend.name && recommend.url) {
+              const target = messages.value.find(
+                (msg) => msg.id === currentStreamingMessageId.value
+              )
+              if (target) {
+                target.recommendation = recommend
+              }
+            }
+          } catch (error) {
+            console.error('获取 B站推荐失败:', error)
+          }
+
           isStreaming.value = false
           streamingContent.value = ''
           currentQuestionId.value = '' // 清空
@@ -490,6 +570,182 @@ const handleSendMessage = async () => {
     ElMessage.error(error.message || '发送消息失败')
     isStreaming.value = false
     streamingContent.value = ''
+  }
+}
+
+/**
+ * 把文本追加到输入框
+ */
+const appendToInput = (text: string) => {
+  if (text) {
+    inputMessage.value = inputMessage.value ? `${inputMessage.value}\n${text}` : text
+  }
+}
+
+/**
+ * 处理 OCR 图片上传
+ */
+const handleBeforeOcrUpload: UploadProps['beforeUpload'] = async (file) => {
+  // 阻止自动上传
+  const text = await runOcr(file)
+  if (text) {
+    appendToInput(text)
+  }
+  return false // 阻止 el-upload 的默认上传行为
+}
+
+/**
+ * 处理音频上传
+ */
+const handleBeforeAudioUpload: UploadProps['beforeUpload'] = async (file) => {
+  // 阻止自动上传
+  const text = await runAudioTranscribe(file)
+  if (text) {
+    appendToInput(text)
+  }
+  return false // 阻止 el-upload 的默认上传行为
+}
+
+/**
+ * 开始录音
+ */
+const startRecording = async () => {
+  if (isRecording.value) return
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    ElMessage.error('当前浏览器不支持录音')
+    return
+  }
+
+  // 按优先级选择可用格式，优先 WAV，不行则 mp3/m4a/amr
+  const mimeCandidates = [
+    'audio/wav',
+    'audio/x-wav',
+    'audio/mpeg',
+    'audio/mp4',
+    'audio/x-m4a',
+    'audio/amr'
+  ]
+  const mimeType = mimeCandidates.find((type) => MediaRecorder.isTypeSupported(type))
+  if (!mimeType) {
+    ElMessage.error('当前浏览器不支持录制 wav/mp3/m4a/amr，请更换浏览器或使用上传方式')
+    return
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const recorder = new MediaRecorder(stream, { mimeType })
+    audioChunks.value = []
+
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        audioChunks.value.push(event.data)
+      }
+    }
+
+    recorder.onstop = async () => {
+      const blob = new Blob(audioChunks.value, { type: mimeType })
+      audioChunks.value = []
+
+      // 停止轨道，释放麦克风
+      stream.getTracks().forEach((track) => track.stop())
+      audioStreamRef.value = null
+
+      // 将录音转为 File 交给现有转写逻辑
+      const extMap: Record<string, string> = {
+        'audio/wav': 'wav',
+        'audio/x-wav': 'wav',
+        'audio/mpeg': 'mp3',
+        'audio/mp4': 'm4a',
+        'audio/x-m4a': 'm4a',
+        'audio/amr': 'amr'
+      }
+      const ext = extMap[mimeType] || 'wav'
+
+      const file = new File([blob], `record-${Date.now()}.${ext}`, {
+        type: mimeType
+      })
+
+      const text = await runAudioTranscribe(file)
+      if (text) {
+        appendToInput(text)
+      }
+
+      isRecording.value = false
+      mediaRecorderRef.value = null
+    }
+
+    mediaRecorderRef.value = recorder
+    audioStreamRef.value = stream
+    recorder.start()
+    isRecording.value = true
+    ElMessage.success('开始录音，点击停止按钮结束')
+  } catch (error: any) {
+    console.error('录音失败:', error)
+    ElMessage.error(error?.message || '无法开始录音')
+    // 确保释放资源
+    if (audioStreamRef.value) {
+      audioStreamRef.value.getTracks().forEach((track) => track.stop())
+      audioStreamRef.value = null
+    }
+    mediaRecorderRef.value = null
+    isRecording.value = false
+    audioChunks.value = []
+  }
+}
+
+/**
+ * 停止录音
+ */
+const stopRecording = () => {
+  if (!isRecording.value || !mediaRecorderRef.value) return
+  if (mediaRecorderRef.value.state !== 'inactive') {
+    mediaRecorderRef.value.stop()
+  }
+}
+
+/**
+ * 处理 B站推荐
+ */
+const handleBilibiliRecommend = async () => {
+  if (!currentSessionId.value) {
+    ElMessage.warning('请先选择一个会话')
+    return
+  }
+
+  // 获取 query：优先使用输入框内容，为空则使用最后一次用户问题
+  let query = inputMessage.value.trim()
+  if (!query) {
+    query = lastUserQuery.value
+  }
+
+  if (!query) {
+    ElMessage.warning('请先输入问题或发送一条消息')
+    return
+  }
+
+  const result = await fetchBilibili(currentSessionId.value, query)
+  
+  if (result.name && result.url) {
+    const lastAssistant = [...messages.value].reverse().find((msg) => msg.role === 'assistant')
+
+    if (lastAssistant) {
+      lastAssistant.recommendation = result
+    } else {
+      const recommendMsg: ChatMessageWithRecommend = {
+        id: `recommend_${Date.now()}`,
+        role: 'assistant',
+        content: '',
+        timestamp: Math.floor(Date.now() / 1000),
+        recommendation: result
+      }
+      messages.value.push(recommendMsg)
+    }
+
+    await nextTick()
+    scrollToBottom()
+  } else {
+    // 无结果，已经在 composable 中显示 ElMessage.info
   }
 }
 
@@ -532,6 +788,17 @@ const handleStopGeneration = async () => {
   
   ElMessage.info('已停止生成')
 }
+
+// 离开时清理录音资源
+onBeforeUnmount(() => {
+  if (mediaRecorderRef.value && mediaRecorderRef.value.state !== 'inactive') {
+    mediaRecorderRef.value.stop()
+  }
+  if (audioStreamRef.value) {
+    audioStreamRef.value.getTracks().forEach((track) => track.stop())
+    audioStreamRef.value = null
+  }
+})
 
 /**
  * 渲染 Markdown
@@ -808,6 +1075,32 @@ onMounted(() => {
               font-family: 'Courier New', monospace;
             }
           }
+
+          .recommend-card {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px dashed #dcdfe6;
+            background: #fdf6ec;
+            color: #8c6b34;
+            max-width: 70%;
+
+            .recommend-title {
+              font-weight: 600;
+              margin-bottom: 6px;
+            }
+
+            .recommend-name {
+              font-size: 14px;
+              margin-bottom: 6px;
+            }
+
+            .recommend-link {
+              color: #d48806;
+              text-decoration: none;
+              font-weight: 600;
+            }
+          }
         }
       }
     }
@@ -816,10 +1109,56 @@ onMounted(() => {
       border-top: 1px solid #e4e7ed;
       padding: 16px;
 
-      .input-actions {
-        margin-top: 12px;
+      .input-wrapper {
+        position: relative;
+
+        :deep(.el-textarea__inner) {
+          padding-right: 160px; // 给右侧图标留出空间
+        }
+      }
+
+      .input-icons {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .recording-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #fef0f0;
+        color: #c45656;
+        font-size: 12px;
+        border: 1px solid #fbc4c4;
+
+        .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #f56c6c;
+          animation: blink 1.2s infinite;
+        }
+
+        .chip-text {
+          white-space: nowrap;
+        }
+
+        &.idle {
+          background: #f4f4f5;
+          color: #606266;
+          border-color: #e4e7ed;
+
+          .dot {
+            display: none;
+          }
+        }
       }
     }
   }
@@ -832,6 +1171,11 @@ onMounted(() => {
   50% {
     opacity: 0.7;
   }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @media (max-width: 768px) {

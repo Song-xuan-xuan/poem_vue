@@ -727,3 +727,35 @@ export interface StreamChunk {
   message_id?: string
   error?: string
 }
+
+// ==================== 多模态输入模块 (Multipart Input) ====================
+
+/**
+ * OCR 图片识别响应数据
+ * 返回识别出的文本内容
+ */
+export type OcrTextData = string
+
+/**
+ * 音频转写响应数据
+ * 返回转写出的文本内容
+ */
+export type AudioTranscribeData = string
+
+// ==================== 资源推荐模块 (Recommend) ====================
+
+/**
+ * B站资源推荐请求参数
+ */
+export interface BilibiliRecommendParams {
+  query: string       // 当前用户问题内容
+  session_id: string  // 会话唯一标识符（UUID格式）
+}
+
+/**
+ * B站资源推荐响应数据
+ */
+export interface BilibiliRecommendData {
+  name: string | null   // 视频标题（无结果时为 null）
+  url: string | null    // 视频链接（无结果时为 null）
+}
