@@ -159,10 +159,12 @@ import type { WorkDetail } from '@/api/type'
 import { getPostDetail, deletePost, createComment } from '@/api/work'
 import { useLikeAndFavor } from '@/composables/useLikeAndFavor'
 import { useUserStore } from '@/stores/user'
+import { useAuthModalStore } from '@/stores/authModal'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const authModalStore = useAuthModalStore()
 const { likePost, collectPost } = useLikeAndFavor()
 
 const goToUserProfile = (userId: string) => {
@@ -217,8 +219,7 @@ const loadPostDetail = async () => {
  */
 const handleLike = () => {
   if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
+    authModalStore.open({ tab: 'login', redirectPath: route.fullPath })
     return
   }
 
@@ -247,8 +248,7 @@ const handleLike = () => {
  */
 const handleCollect = () => {
   if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
+    authModalStore.open({ tab: 'login', redirectPath: route.fullPath })
     return
   }
 
@@ -310,8 +310,7 @@ const handleDelete = async () => {
  */
 const handleSubmitComment = async () => {
   if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
+    authModalStore.open({ tab: 'login', redirectPath: route.fullPath })
     return
   }
 

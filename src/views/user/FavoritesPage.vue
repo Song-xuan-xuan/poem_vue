@@ -111,9 +111,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FavoriteItem } from '@/api/type'
 import { getFavorites, unCollect } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
+import { useAuthModalStore } from '@/stores/authModal'
 
 const router = useRouter()
 const userStore = useUserStore()
+const authModalStore = useAuthModalStore()
 
 // 搜索
 const searchKeyword = ref('')
@@ -139,8 +141,7 @@ const hasMore = computed(() => {
  */
 const loadFavorites = async (append = false) => {
   if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
+    authModalStore.open({ tab: 'login', redirectPath: '/user/favorites' })
     return
   }
 

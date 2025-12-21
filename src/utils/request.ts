@@ -2,6 +2,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse,
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import router from '@/router'
+import { useAuthModalStore } from '@/stores/authModal'
 import type { Result } from '@/api/type'
 
 // 扩展 axios config 类型，添加跳过刷新标记
@@ -93,10 +94,12 @@ function attachInterceptors(instance: AxiosInstance) {
       
       // ========== 处理 401 错误（Token 失效）==========
       if (status === 401) {
+        const authModalStore = useAuthModalStore()
         // 如果请求已标记跳过刷新逻辑，直接登出
         if (config.skipAuthRefresh) {
           ElMessage.error('登录已过期，请重新登录')
           userStore.logout()
+          authModalStore.open({ tab: 'login' })
           return Promise.reject(error)
         }
         
@@ -134,6 +137,7 @@ function attachInterceptors(instance: AxiosInstance) {
             // 刷新失败，清除用户数据并跳转登录
             ElMessage.error('登录已过期，请重新登录')
             userStore.logout()
+            authModalStore.open({ tab: 'login' })
             
             // 清空待处理请求
             requestQueue = []
@@ -155,7 +159,11 @@ function attachInterceptors(instance: AxiosInstance) {
         } else {
           // 没有 refresh_token，直接跳转登录
           ElMessage.error('请先登录')
-          router.push('/auth/login')
+          authModalStore.open({ tab: 'login' })
+          // 若当前页面是严格私有页，路由守卫会在导航时处理；这里仅保证交互触发登录弹窗
+          if (router.currentRoute.value.path === '/auth/login' || router.currentRoute.value.path === '/auth/register') {
+            router.push('/')
+          }
           return Promise.reject(error)
         }
       }

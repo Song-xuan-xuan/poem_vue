@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useAuthModalStore } from '@/stores/authModal'
 
 // 布局组件
 import MainLayout from '@/layouts/MainLayout.vue'
@@ -150,30 +150,38 @@ const router = createRouter({
 })
 
 // ==================== 全局路由守卫 ====================
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const userStore = useUserStore()
+  const authModalStore = useAuthModalStore()
 
   // 设置页面标题
   if (to.meta.title) {
     document.title = `${to.meta.title} - 诗词社区`
   }
 
+  // 兼容旧的 /auth/login 与 /auth/register：不再使用独立页面，改为全局弹窗
+  if (to.path === '/auth/login' || to.path === '/auth/register') {
+    authModalStore.open({
+      tab: to.path === '/auth/register' ? 'register' : 'login',
+      redirectPath: (to.query.redirect as string) || ''
+    })
+    return { path: '/' }
+  }
+
   // 检查是否需要登录
-  if (to.meta.requiresAuth) {
-    if (userStore.isLoggedIn()) {
-      // 已登录，允许访问
-      next()
-    } else {
-      // 未登录，跳转到登录页
-      ElMessage.warning('请先登录')
-      next({
-        path: '/auth/login',
-        query: { redirect: to.fullPath }  // 保存目标路由，登录后可跳转回来
-      })
+  if (to.meta.requiresAuth && !userStore.isLoggedIn()) {
+    authModalStore.open({
+      tab: 'login',
+      redirectPath: to.fullPath
+    })
+
+    // 有来源页：若来源页是公开内容则停留；若来源页本身也是私有页则回到首页
+    if (from.matched.length > 0 && !from.meta.requiresAuth) {
+      return false
     }
-  } else {
-    // 不需要登录，直接访问
-    next()
+
+    // 首次直达私有页，或来源页也为私有页：回到首页
+    return { path: '/' }
   }
 })
 

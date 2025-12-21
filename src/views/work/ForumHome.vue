@@ -336,12 +336,6 @@ const handlePageChange = (page: number) => {
  * 点赞帖子
  */
 const handleLikePost = (post: WorkItem) => {
-  if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
-    return
-  }
-
   likePost(
     post.id,
     post.like_count,
@@ -355,12 +349,6 @@ const handleLikePost = (post: WorkItem) => {
  * 收藏帖子
  */
 const handleCollectPost = (post: WorkItem) => {
-  if (!userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录')
-    router.push('/auth/login')
-    return
-  }
-
   collectPost(
     post.id,
     post.collect_count,

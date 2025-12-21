@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { likePost as likePostAPI, collectPost as collectPostAPI } from '@/api/work'
+import { useUserStore } from '@/stores/user'
+import { useAuthModalStore } from '@/stores/authModal'
 
 /**
  * 防抖函数
@@ -25,6 +27,9 @@ function debounce<T extends (...args: any[]) => any>(
  * 点赞和收藏的乐观 UI 更新 Hook
  */
 export function useLikeAndFavor() {
+  const userStore = useUserStore()
+  const authModalStore = useAuthModalStore()
+
   // 防抖请求队列，用于合并多次快速点击
   const pendingRequests = ref(new Map<string, boolean>())
 
@@ -42,6 +47,11 @@ export function useLikeAndFavor() {
       onSuccess: (count: number) => void,
       onError?: () => void
     ) => {
+      if (!userStore.isLoggedIn()) {
+        authModalStore.open({ tab: 'login', redirectPath: `/forum/post/${postId}` })
+        return
+      }
+
       const requestKey = `like_${postId}`
       
       // 如果已有相同请求在进行中，忽略本次请求
@@ -90,6 +100,11 @@ export function useLikeAndFavor() {
       onSuccess: (count: number) => void,
       onError?: () => void
     ) => {
+      if (!userStore.isLoggedIn()) {
+        authModalStore.open({ tab: 'login', redirectPath: `/forum/post/${postId}` })
+        return
+      }
+
       const requestKey = `collect_${postId}`
 
       // 如果已有相同请求在进行中，忽略本次请求

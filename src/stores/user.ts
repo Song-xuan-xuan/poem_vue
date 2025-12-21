@@ -99,8 +99,8 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_info')
     
-    // 跳转到登录页
-    router.push('/auth/login')
+    // 回到首页（登录改为全局弹窗触发）
+    router.push('/')
     
     ElMessage.success('已退出登录')
   }

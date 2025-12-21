@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { useAuthModalStore } from '@/stores/authModal'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
+const authModalStore = useAuthModalStore()
+
+const activeIndex = computed(() => route.path)
 
 // 导航菜单项
 const menuItems = [
@@ -14,15 +19,15 @@ const menuItems = [
   { name: 'AI助手', path: '/ai', icon: 'ChatLineRound' }
 ]
 
-// 未登录点击导航项时引导登录
+// 未登录点击导航项时打开全局弹窗
 const handleMenuClick = (path: string) => {
   const needsAuth = ['/poem/market', '/forum', '/ai']
   if (needsAuth.includes(path) && !userStore.isLoggedIn()) {
-    ElMessage.warning('请先登录后访问')
-    router.push('/auth/login')
-    return false
+    authModalStore.open({ tab: 'login', redirectPath: path })
+    return
   }
-  return true
+
+  router.push(path)
 }
 
 // 用户菜单项
@@ -42,7 +47,7 @@ const handleCommand = (command: string) => {
 
 // 跳转登录
 const goToLogin = () => {
-  router.push('/auth/login')
+  authModalStore.open({ tab: 'login' })
 }
 </script>
 
@@ -50,7 +55,7 @@ const goToLogin = () => {
   <el-menu
     mode="horizontal"
     :ellipsis="false"
-    :router="true"
+    :default-active="activeIndex"
     class="navbar"
   >
     <!-- Logo / 网站标题 -->
