@@ -131,9 +131,8 @@ export interface PoemInfo {
   id: number
   title: string
   author: string
-  dynasty?: string
   tags: string[]
-  paragraphs?: string[]
+  paragraphs: string[]
 }
 
 /**
@@ -225,11 +224,10 @@ export interface PoemDetail {
   id: number
   title: string
   author: string
-  tags: string[]
   paragraphs: string[]
-  strains?: string
-  notes?: string
-  [key: string]: any
+  tags: string[]
+  dynasty?: string        // 朝代（可选）
+  appreciation?: string   // 赏析内容（可选）
 }
 
 /**
@@ -254,6 +252,8 @@ export interface WorkItem {
   styles: string[]
   comments?: WorkComment[]
   heat_score?: number
+  user_like_status?: number      // 当前用户点赞状态（1=已点赞，0=未点赞）
+  user_collect_status?: number   // 当前用户收藏状态（1=已收藏，0=未收藏）
 }
 
 /**
@@ -281,6 +281,8 @@ export interface WorkDetail {
   styles: string[]
   comment_total: number
   comments: WorkComment[]
+  user_like_status: number       // 当前用户点赞状态（1=已点赞，0=未点赞）
+  user_collect_status: number    // 当前用户收藏状态（1=已收藏，0=未收藏）
 }
 
 /**
@@ -307,7 +309,7 @@ export interface CreateWorkParams {
  * 发布帖子响应数据
  */
 export interface CreateWorkData {
-  poem: WorkItem
+  poem: WorkItem  // WorkItem 已包含 user_like_status 和 user_collect_status
   user_exp: number
   user_level: string
   level_updated: boolean
@@ -320,12 +322,14 @@ export interface CreateWorkData {
 export interface LikeWorkData {
   poem_id: string
   like_count: number
-  post_user_id: number
-  user_original_exp: number
-  user_new_exp: number
-  user_original_level: string
-  user_new_level: string
-  level_updated: boolean
+  like_status: number            // 点赞状态（1=已点赞）
+  post_user_id: string
+  is_first_like: boolean         // 是否是第一次点赞
+  user_original_exp?: number
+  user_new_exp?: number
+  user_original_level?: string
+  user_new_level?: string
+  level_updated?: boolean
 }
 
 /**
@@ -334,12 +338,34 @@ export interface LikeWorkData {
 export interface CollectWorkData {
   poem_id: string
   collect_count: number
-  post_user_id: number
-  user_original_exp: number
-  user_new_exp: number
-  user_original_level: string
-  user_new_level: string
-  level_updated: boolean
+  collect_status: number         // 收藏状态（1=已收藏）
+  post_user_id: string
+  is_first_collect: boolean      // 是否是第一次收藏
+  user_original_exp?: number
+  user_new_exp?: number
+  user_original_level?: string
+  user_new_level?: string
+  level_updated?: boolean
+}
+
+/**
+ * 取消点赞响应数据
+ */
+export interface UnlikeWorkData {
+  poem_id: string
+  like_count: number
+  like_status: number            // 点赞状态（0=未点赞）
+  message: string
+}
+
+/**
+ * 取消收藏响应数据
+ */
+export interface UnCollectWorkData {
+  poem_id: string
+  collect_count: number
+  collect_status: number         // 收藏状态（0=未收藏）
+  message: string
 }
 
 /**
@@ -375,6 +401,8 @@ export interface HotWorkItem {
   id: string
   title: string
   heat_score: number
+  user_like_status?: number      // 当前用户点赞状态（1=已点赞，0=未点赞）
+  user_collect_status?: number   // 当前用户收藏状态（1=已收藏，0=未收藏）
 }
 
 /**
@@ -491,12 +519,12 @@ export interface CollectParams {
  */
 export interface FavoriteItem {
   collect_id: string
-  collect_time: string
+  collect_time: number          // 收藏时间戳（秒）
   work_info: {
     id: string
     title: string
     content: string
-    publish_time: string
+    publish_time: number        // 发布时间戳（秒）
     like_count: number
     collect_count: number
     styles: string[]
@@ -543,7 +571,15 @@ export interface UnCollectData {
  */
 export interface FavoriteListParams {
   page?: number
-  title?: string
+  title?: string  // 模糊查询关键词
+}
+
+/**
+ * Work 收藏夹列表查询请求参数（新版 API）
+ */
+export interface WorkCollectListParams {
+  page?: number
+  title?: string  // 模糊查询关键词
 }
 
 /**

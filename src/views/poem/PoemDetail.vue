@@ -10,8 +10,8 @@
           <div class="poem-header">
             <h1 class="poem-title">{{ poemDetail.title }}</h1>
             <div class="poem-meta">
-              <span class="dynasty">{{ poemDetail.dynasty }}</span>
-              <span class="divider">·</span>
+              <span v-if="poemDetail.dynasty" class="dynasty">{{ poemDetail.dynasty }}</span>
+              <span v-if="poemDetail.dynasty" class="divider">·</span>
               <span class="author">{{ poemDetail.author }}</span>
             </div>
           </div>

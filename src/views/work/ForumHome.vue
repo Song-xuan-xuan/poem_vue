@@ -70,11 +70,12 @@
               <div class="stats">
                 <span class="stat-item">
                   <el-icon><ChatDotRound /></el-icon>
-                  {{ post.comments?.length || 0 }}
+                  {{ post.comment_total ?? post.comments?.length ?? 0 }}
                 </span>
               </div>
               <div class="actions">
                 <el-button
+                  :type="post.user_like_status === 1 ? 'primary' : 'default'"
                   text
                   @click.stop="handleLikePost(post)"
                 >
@@ -82,6 +83,7 @@
                   {{ post.like_count }}
                 </el-button>
                 <el-button
+                  :type="post.user_collect_status === 1 ? 'warning' : 'default'"
                   text
                   @click.stop="handleCollectPost(post)"
                 >
@@ -218,7 +220,7 @@ import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
-const { likePost, collectPost } = useLikeAndFavor()
+const { toggleLike, toggleCollect } = useLikeAndFavor()
 
 // 搜索和筛选
 const searchKeyword = ref('')
@@ -333,27 +335,35 @@ const handlePageChange = (page: number) => {
 
 
 /**
- * 点赞帖子
+ * 切换点赞状态（点赞/取消点赞）
  */
 const handleLikePost = (post: WorkItem) => {
-  likePost(
+  const currentStatus = post.user_like_status ?? 0
+  
+  toggleLike(
     post.id,
+    currentStatus,
     post.like_count,
-    (count: number) => {
-      post.like_count = count
+    (newStatus: number, newCount: number) => {
+      post.user_like_status = newStatus
+      post.like_count = newCount
     }
   )
 }
 
 /**
- * 收藏帖子
+ * 切换收藏状态（收藏/取消收藏）
  */
 const handleCollectPost = (post: WorkItem) => {
-  collectPost(
+  const currentStatus = post.user_collect_status ?? 0
+  
+  toggleCollect(
     post.id,
+    currentStatus,
     post.collect_count,
-    (count: number) => {
-      post.collect_count = count
+    (newStatus: number, newCount: number) => {
+      post.user_collect_status = newStatus
+      post.collect_count = newCount
     }
   )
 }

@@ -1,6 +1,11 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { likePost as likePostAPI, collectPost as collectPostAPI } from '@/api/work'
+import { 
+  likePost as likePostAPI, 
+  cancelLikePost as cancelLikePostAPI,
+  collectPost as collectPostAPI,
+  cancelCollectPost as cancelCollectPostAPI
+} from '@/api/work'
 import { useUserStore } from '@/stores/user'
 import { useAuthModalStore } from '@/stores/authModal'
 
@@ -24,29 +29,32 @@ function debounce<T extends (...args: any[]) => any>(
 }
 
 /**
- * 点赞和收藏的乐观 UI 更新 Hook
+ * 点赞和收藏的智能切换 Hook（支持乐观更新）
  */
 export function useLikeAndFavor() {
   const userStore = useUserStore()
   const authModalStore = useAuthModalStore()
 
-  // 防抖请求队列，用于合并多次快速点击
+  // 防抖请求队列，防止重复点击
   const pendingRequests = ref(new Map<string, boolean>())
 
   /**
-   * 点赞帖子（只能点赞一次，不支持取消）
+   * 切换点赞状态（支持点赞/取消点赞）
    * @param postId 帖子 ID
+   * @param currentStatus 当前点赞状态（0=未点赞, 1=已点赞）
    * @param currentCount 当前点赞数
-   * @param onSuccess 成功回调
-   * @param onError 错误回调
+   * @param onSuccess 成功回调 (newStatus: number, newCount: number) => void
+   * @param onError 失败回调（可选）
    */
-  const handleLikePost = debounce(
+  const toggleLike = debounce(
     async (
       postId: string,
+      currentStatus: number,
       currentCount: number,
-      onSuccess: (count: number) => void,
+      onSuccess: (status: number, count: number) => void,
       onError?: () => void
     ) => {
+      // 1. 检查登录状态
       if (!userStore.isLoggedIn()) {
         authModalStore.open({ tab: 'login', redirectPath: `/forum/post/${postId}` })
         return
@@ -54,31 +62,41 @@ export function useLikeAndFavor() {
 
       const requestKey = `like_${postId}`
       
-      // 如果已有相同请求在进行中，忽略本次请求
+      // 2. 防止重复请求
       if (pendingRequests.value.get(requestKey)) {
         return
       }
 
-      // 标记请求进行中
+      // 3. 乐观更新 UI（先更新界面）
+      const optimisticStatus = currentStatus === 1 ? 0 : 1
+      const optimisticCount = currentStatus === 1 ? currentCount - 1 : currentCount + 1
+      onSuccess(optimisticStatus, optimisticCount)
+
+      // 4. 标记请求进行中
       pendingRequests.value.set(requestKey, true)
 
       try {
-        const res = await likePostAPI(postId)
-        // 请求成功，使用接口返回的最新点赞数
-        ElMessage.success('点赞成功')
-        onSuccess(res.data.like_count)
-      } catch (error: any) {
-        // 处理重复点赞错误
-        if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已')) {
-          ElMessage.warning('您已点赞过该帖子')
-          // 保持当前计数，不增加
-          onSuccess(currentCount)
+        // 5. 根据当前状态决定调用点赞还是取消点赞
+        if (currentStatus === 1) {
+          // 已点赞 -> 取消点赞
+          const res = await cancelLikePostAPI(postId)
+          ElMessage.success('已取消点赞')
+          // 用接口返回的实际值覆盖 UI
+          onSuccess(res.data.like_status, res.data.like_count)
         } else {
-          ElMessage.error(error.message || '点赞失败')
-          if (onError) onError()
+          // 未点赞 -> 点赞
+          const res = await likePostAPI(postId)
+          ElMessage.success('点赞成功')
+          // 用接口返回的实际值覆盖 UI
+          onSuccess(res.data.like_status, res.data.like_count)
         }
+      } catch (error: any) {
+        // 6. 请求失败：回滚 UI
+        ElMessage.error(error.message || '操作失败')
+        onSuccess(currentStatus, currentCount)
+        if (onError) onError()
       } finally {
-        // 移除请求标记
+        // 7. 移除请求标记
         pendingRequests.value.delete(requestKey)
       }
     },
@@ -86,20 +104,22 @@ export function useLikeAndFavor() {
   )
 
   /**
-   * 收藏帖子（只能收藏一次，不支持取消）
-   * 注意：取消收藏只能在收藏夹页面进行
+   * 切换收藏状态（支持收藏/取消收藏）
    * @param postId 帖子 ID
+   * @param currentStatus 当前收藏状态（0=未收藏, 1=已收藏）
    * @param currentCount 当前收藏数
-   * @param onSuccess 成功回调
-   * @param onError 错误回调
+   * @param onSuccess 成功回调 (newStatus: number, newCount: number) => void
+   * @param onError 失败回调（可选）
    */
-  const handleCollectPost = debounce(
+  const toggleCollect = debounce(
     async (
       postId: string,
+      currentStatus: number,
       currentCount: number,
-      onSuccess: (count: number) => void,
+      onSuccess: (status: number, count: number) => void,
       onError?: () => void
     ) => {
+      // 1. 检查登录状态
       if (!userStore.isLoggedIn()) {
         authModalStore.open({ tab: 'login', redirectPath: `/forum/post/${postId}` })
         return
@@ -107,31 +127,41 @@ export function useLikeAndFavor() {
 
       const requestKey = `collect_${postId}`
 
-      // 如果已有相同请求在进行中，忽略本次请求
+      // 2. 防止重复请求
       if (pendingRequests.value.get(requestKey)) {
         return
       }
 
-      // 标记请求进行中
+      // 3. 乐观更新 UI（先更新界面）
+      const optimisticStatus = currentStatus === 1 ? 0 : 1
+      const optimisticCount = currentStatus === 1 ? currentCount - 1 : currentCount + 1
+      onSuccess(optimisticStatus, optimisticCount)
+
+      // 4. 标记请求进行中
       pendingRequests.value.set(requestKey, true)
 
       try {
-        const res = await collectPostAPI(postId)
-        // 请求成功，使用接口返回的最新收藏数
-        ElMessage.success('收藏成功')
-        onSuccess(res.data.collect_count)
-      } catch (error: any) {
-        // 处理重复收藏错误
-        if (error.response?.status === 400 || error.message?.includes('重复') || error.message?.includes('已收藏')) {
-          ElMessage.warning('您已收藏过该帖子')
-          // 保持当前计数，不增加
-          onSuccess(currentCount)
+        // 5. 根据当前状态决定调用收藏还是取消收藏
+        if (currentStatus === 1) {
+          // 已收藏 -> 取消收藏
+          const res = await cancelCollectPostAPI(postId)
+          ElMessage.success('已取消收藏')
+          // 用接口返回的实际值覆盖 UI
+          onSuccess(res.data.collect_status, res.data.collect_count)
         } else {
-          ElMessage.error(error.message || '收藏失败')
-          if (onError) onError()
+          // 未收藏 -> 收藏
+          const res = await collectPostAPI(postId)
+          ElMessage.success('收藏成功')
+          // 用接口返回的实际值覆盖 UI
+          onSuccess(res.data.collect_status, res.data.collect_count)
         }
+      } catch (error: any) {
+        // 6. 请求失败：回滚 UI
+        ElMessage.error(error.message || '操作失败')
+        onSuccess(currentStatus, currentCount)
+        if (onError) onError()
       } finally {
-        // 移除请求标记
+        // 7. 移除请求标记
         pendingRequests.value.delete(requestKey)
       }
     },
@@ -139,7 +169,8 @@ export function useLikeAndFavor() {
   )
 
   /**
-   * 点赞帖子
+   * 点赞帖子（兼容旧版，仅支持点赞，不支持取消）
+   * @deprecated 请使用 toggleLike
    */
   const likePost = (
     postId: string,
@@ -147,11 +178,14 @@ export function useLikeAndFavor() {
     onSuccess: (count: number) => void,
     onError?: () => void
   ) => {
-    handleLikePost(postId, currentCount, onSuccess, onError)
+    toggleLike(postId, 0, currentCount, (status, count) => {
+      onSuccess(count)
+    }, onError)
   }
 
   /**
-   * 收藏帖子
+   * 收藏帖子（兼容旧版，仅支持收藏，不支持取消）
+   * @deprecated 请使用 toggleCollect
    */
   const collectPost = (
     postId: string,
@@ -159,10 +193,15 @@ export function useLikeAndFavor() {
     onSuccess: (count: number) => void,
     onError?: () => void
   ) => {
-    handleCollectPost(postId, currentCount, onSuccess, onError)
+    toggleCollect(postId, 0, currentCount, (status, count) => {
+      onSuccess(count)
+    }, onError)
   }
 
   return {
+    toggleLike,
+    toggleCollect,
+    // 兼容旧版
     likePost,
     collectPost
   }

@@ -52,41 +52,6 @@
         </div>
       </div>
     </el-card>
-
-    <!-- 每日一首 -->
-    <el-card class="daily-poem-card" shadow="hover" v-if="dailyPoem">
-      <template #header>
-        <div class="card-header">
-          <span class="header-title">
-            <el-icon><StarFilled /></el-icon>
-            每日一首
-          </span>
-          <span class="header-date">{{ formatDate(new Date()) }}</span>
-        </div>
-      </template>
-      <div class="daily-poem-content" @click="goToDetail(dailyPoem.id)">
-        <h2 class="poem-title">{{ dailyPoem.title }}</h2>
-        <p class="poem-author">{{ dailyPoem.author }} · {{ dailyPoem.dynasty }}</p>
-        <div class="poem-paragraphs">
-          <p v-for="(para, index) in dailyPoem.paragraphs?.slice(0, 4)" :key="index">
-            {{ para }}
-          </p>
-          <span v-if="(dailyPoem.paragraphs?.length || 0) > 4" class="more-text">...</span>
-        </div>
-        <div class="poem-tags" v-if="dailyPoem.tags && dailyPoem.tags.length > 0">
-          <el-tag
-            v-for="tag in dailyPoem.tags"
-            :key="tag"
-            size="small"
-            type="info"
-            effect="plain"
-          >
-            {{ tag }}
-          </el-tag>
-        </div>
-      </div>
-    </el-card>
-
     <!-- 诗词列表 -->
     <div class="poem-list">
       <el-empty v-if="!loading && poems.length === 0" description="暂无诗词数据" />
@@ -144,10 +109,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, StarFilled, Loading } from '@element-plus/icons-vue'
+import { Search, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import type { PoemDetail } from '@/api/type'
-import { getDailyPoem } from '@/api/poem'
 import { usePoemSearch } from '@/composables/usePoemSearch'
 
 const router = useRouter()
@@ -234,20 +197,6 @@ const selectedTags = computed(() => {
   return Object.values(selectedTagsByCategory.value).filter(tag => tag && tag.trim())
 })
 
-// 每日一首
-const dailyPoem = ref<PoemDetail | null>(null)
-
-/**
- * 加载每日一首
- */
-const loadDailyPoem = async () => {
-  try {
-    const res = await getDailyPoem()
-    dailyPoem.value = res.data.poem
-  } catch (error: any) {
-    console.error('加载每日一首失败:', error)
-  }
-}
 
 /**
  * 执行搜索
@@ -313,18 +262,8 @@ const goToDetail = (id: number) => {
   router.push(`/poem/detail/${id}`)
 }
 
-/**
- * 格式化日期
- */
-const formatDate = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}年${month}月${day}日`
-}
 
 onMounted(() => {
-  loadDailyPoem()
   search()
   // 添加滚动监听
   window.addEventListener('scroll', handleScroll)
@@ -381,87 +320,6 @@ onUnmounted(() => {
 
         .el-button {
           align-self: flex-start;
-        }
-      }
-    }
-  }
-
-  .daily-poem-card {
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-
-    :deep(.el-card__header) {
-      background: transparent;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .header-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 18px;
-        font-weight: 600;
-
-        .el-icon {
-          color: #ffd700;
-        }
-      }
-
-      .header-date {
-        font-size: 14px;
-        opacity: 0.9;
-      }
-    }
-
-    .daily-poem-content {
-      cursor: pointer;
-      transition: transform 0.3s;
-
-      &:hover {
-        transform: translateY(-4px);
-      }
-
-      .poem-title {
-        font-size: 24px;
-        margin: 0 0 12px 0;
-        font-weight: 600;
-      }
-
-      .poem-author {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 16px;
-      }
-
-      .poem-paragraphs {
-        line-height: 1.8;
-        font-size: 16px;
-        margin-bottom: 16px;
-
-        p {
-          margin: 8px 0;
-        }
-
-        .more-text {
-          opacity: 0.7;
-        }
-      }
-
-      .poem-tags {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-
-        :deep(.el-tag) {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.3);
-          color: #fff;
         }
       }
     }

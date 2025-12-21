@@ -165,7 +165,7 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const authModalStore = useAuthModalStore()
-const { likePost, collectPost } = useLikeAndFavor()
+const { toggleLike, toggleCollect } = useLikeAndFavor()
 
 const goToUserProfile = (userId: string) => {
   router.push(`/user/profile/${userId}`)
@@ -200,11 +200,11 @@ const loadPostDetail = async () => {
   loading.value = true
   try {
     const res = await getPostDetail(postId)
-    // 初始化 UI 状态字段
+    // 从 user_like_status 和 user_collect_status 映射初始化 UI 状态
     postDetail.value = {
       ...res.data.detail,
-      is_liked: false,
-      is_collected: false
+      is_liked: res.data.detail.user_like_status === 1,
+      is_collected: res.data.detail.user_collect_status === 1
     }
   } catch (error: any) {
     ElMessage.error(error.message || '加载帖子详情失败')
@@ -215,58 +215,42 @@ const loadPostDetail = async () => {
 }
 
 /**
- * 点赞帖子
+ * 切换点赞状态（点赞/取消点赞）
  */
 const handleLike = () => {
-  if (!userStore.isLoggedIn()) {
-    authModalStore.open({ tab: 'login', redirectPath: route.fullPath })
-    return
-  }
-
   if (!postDetail.value) return
-  
-  // 如果已点赞，不再执行
-  if (postDetail.value.is_liked) {
-    ElMessage.info('您已点赞过该帖子')
-    return
-  }
 
-  likePost(
+  const currentStatus = postDetail.value.is_liked ? 1 : 0
+  
+  toggleLike(
     postDetail.value.id,
+    currentStatus,
     postDetail.value.like_count,
-    (count: number) => {
+    (newStatus: number, newCount: number) => {
       if (postDetail.value) {
-        postDetail.value.is_liked = true
-        postDetail.value.like_count = count
+        postDetail.value.is_liked = newStatus === 1
+        postDetail.value.like_count = newCount
       }
     }
   )
 }
 
 /**
- * 收藏帖子
+ * 切换收藏状态（收藏/取消收藏）
  */
 const handleCollect = () => {
-  if (!userStore.isLoggedIn()) {
-    authModalStore.open({ tab: 'login', redirectPath: route.fullPath })
-    return
-  }
-
   if (!postDetail.value) return
-  
-  // 如果已收藏，不再执行
-  if (postDetail.value.is_collected) {
-    ElMessage.info('您已收藏过该帖子，可在收藏夹页面取消收藏')
-    return
-  }
 
-  collectPost(
+  const currentStatus = postDetail.value.is_collected ? 1 : 0
+  
+  toggleCollect(
     postDetail.value.id,
+    currentStatus,
     postDetail.value.collect_count,
-    (count: number) => {
+    (newStatus: number, newCount: number) => {
       if (postDetail.value) {
-        postDetail.value.is_collected = true
-        postDetail.value.collect_count = count
+        postDetail.value.is_collected = newStatus === 1
+        postDetail.value.collect_count = newCount
       }
     }
   )

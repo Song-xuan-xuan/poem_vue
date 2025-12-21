@@ -29,7 +29,7 @@
       <div v-else class="favorites-grid">
         <el-card
           v-for="item in favorites"
-          :key="item.collect_id"
+          :key="item.work_info.id"
           shadow="hover"
           class="favorite-card"
           @click="goToPost(item.work_info.id)"
@@ -55,7 +55,7 @@
               size="small"
               text
               :icon="Delete"
-              @click.stop="handleUnCollect(item.collect_id, item.work_info.title)"
+              @click.stop="handleUnCollect(item.work_info.id, item.work_info.title)"
             >
               取消收藏
             </el-button>
@@ -152,15 +152,19 @@ const loadFavorites = async (append = false) => {
       title: searchKeyword.value.trim() || undefined
     })
 
+    // 新接口结构：{ items, total, page_size, total_pages }
+    const items = res.data.items || []
+    
     // 追加模式：累加数据
     if (append) {
-      favorites.value = [...favorites.value, ...(res.data.items || [])]
+      favorites.value = [...favorites.value, ...items]
     } else {
       // 替换模式：重置数据
-      favorites.value = res.data.items || []
+      favorites.value = items
     }
 
     total.value = res.data.total || 0
+    pageSize.value = res.data.page_size || 10
   } catch (error: any) {
     ElMessage.error(error.message || '加载收藏列表失败')
     if (!append) {
@@ -209,7 +213,7 @@ const handleScroll = () => {
 /**
  * 取消收藏
  */
-const handleUnCollect = async (collectId: string, title: string) => {
+const handleUnCollect = async (poemId: string, title: string) => {
   try {
     await ElMessageBox.confirm(
       `确定要取消收藏《${title}》吗？`,
@@ -221,11 +225,11 @@ const handleUnCollect = async (collectId: string, title: string) => {
       }
     )
 
-    await unCollect(collectId)
+    await unCollect(poemId)
     ElMessage.success('取消收藏成功')
 
-    // 从当前列表中移除该项
-    favorites.value = favorites.value.filter(item => item.collect_id !== collectId)
+    // 从当前列表中移除该项（使用 work_info.id 匹配）
+    favorites.value = favorites.value.filter(item => item.work_info.id !== poemId)
     total.value--
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -244,10 +248,14 @@ const goToPost = (postId: string) => {
 /**
  * 格式化收藏时间
  */
-const formatCollectTime = (dateStr: string) => {
-  if (!dateStr) return ''
-  // 解析时间字符串：2025-12-07T10:30:00
-  const date = new Date(dateStr)
+const formatCollectTime = (collectTime: number | string) => {
+  if (!collectTime) return ''
+  
+  // 根据类型处理：number 是 Unix 时间戳（秒），string 是 ISO 字符串
+  const date = typeof collectTime === 'number' 
+    ? new Date(collectTime * 1000)  // Unix 时间戳（秒）转毫秒
+    : new Date(collectTime)           // ISO 字符串直接解析
+  
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))

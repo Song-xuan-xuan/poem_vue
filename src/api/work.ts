@@ -7,9 +7,13 @@ import type {
   CreateWorkData,
   LikeWorkData,
   CollectWorkData,
+  UnlikeWorkData,
+  UnCollectWorkData,
   CreateWorkCommentParams,
   CreateWorkCommentData,
   HotRankData,
+  WorkCollectListParams,
+  FavoritePageData,
   LikeParams,
   // 兼容旧版
   CreatePostParams,
@@ -92,11 +96,22 @@ export const createComment = (params: CreateWorkCommentParams): Promise<Result<C
 
 /**
  * 点赞帖子
+ * POST /api/work/like/{poem_id}
  * @param poemId - 帖子ID
- * @returns 包含最新 like_count 的响应数据
+ * @returns 包含 like_count, like_status, is_first_like 等字段
  */
 export const likePost = (poemId: string): Promise<Result<LikeWorkData>> => {
   return request.post(`/api/work/like/${poemId}`)
+}
+
+/**
+ * 取消点赞
+ * DELETE /api/work/like/cancel/{poem_id}
+ * @param poemId - 帖子ID
+ * @returns 包含更新后的 like_count 和 like_status
+ */
+export const cancelLikePost = (poemId: string): Promise<Result<UnlikeWorkData>> => {
+  return request.delete(`/api/work/like/cancel/${poemId}`)
 }
 
 /**
@@ -110,11 +125,22 @@ export const toggleLike = (params: LikeParams): Promise<Result<LikeWorkData>> =>
 
 /**
  * 收藏帖子
+ * POST /api/work/collect/{poem_id}/
  * @param poemId - 帖子ID
- * @returns 包含最新 collect_count 的响应数据
+ * @returns 包含 collect_count, collect_status, is_first_collect 等字段
  */
 export const collectPost = (poemId: string): Promise<Result<CollectWorkData>> => {
   return request.post(`/api/work/collect/${poemId}/`)
+}
+
+/**
+ * 取消收藏
+ * DELETE /api/work/collect/cancel/{poem_id}
+ * @param poemId - 帖子ID
+ * @returns 包含更新后的 collect_count 和 collect_status
+ */
+export const cancelCollectPost = (poemId: string): Promise<Result<UnCollectWorkData>> => {
+  return request.delete(`/api/work/collect/cancel/${poemId}`)
 }
 
 /**
@@ -122,4 +148,14 @@ export const collectPost = (poemId: string): Promise<Result<CollectWorkData>> =>
  */
 export const getHotRank = (): Promise<Result<HotRankData>> => {
   return request.get('/api/work/hot')
+}
+
+/**
+ * 收藏夹列表查询（新版 API）
+ * GET /api/work/list
+ * @param params - 包含 page 和 title（模糊查询）参数
+ * @returns 收藏夹分页列表
+ */
+export const getWorkCollectList = (params: WorkCollectListParams): Promise<Result<FavoritePageData>> => {
+  return request.get('/api/work/list', { params })
 }
