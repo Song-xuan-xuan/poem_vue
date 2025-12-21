@@ -40,7 +40,7 @@ export const useBilibiliRecommend = () => {
 
       if (res.code === 200) {
         if (res.data.name && res.data.url) {
-          ElMessage.success('成功获取 B站推荐视频')
+          // ElMessage.success('成功获取 B站推荐视频')
         } else {
           ElMessage.info('未找到相关的 B站视频')
         }

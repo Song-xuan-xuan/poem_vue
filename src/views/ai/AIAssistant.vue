@@ -134,12 +134,60 @@
 
         <!-- 输入区域 -->
         <div class="input-area">
+          <!-- AGENT 功能按钮区 -->
+          <div class="agent-buttons">
+            <el-button
+              type="primary"
+              plain
+              size="small"
+              :class="{ 'active-agent': selectedAgent === 'hot-poem' }"
+              @click="selectAgent('hot-poem')"
+            >
+              <el-icon><TrendCharts /></el-icon>
+              热点诗词赏析
+            </el-button>
+            <el-button
+              type="success"
+              plain
+              size="small"
+              :class="{ 'active-agent': selectedAgent === 'ai-create' }"
+              @click="selectAgent('ai-create')"
+            >
+              <el-icon><MagicStick /></el-icon>
+              AI创作发布
+            </el-button>
+          </div>
+
           <div class="input-wrapper">
+            <!-- AGENT 功能标识 -->
+            <div v-if="selectedAgent" class="agent-badge">
+              <el-tag
+                v-if="selectedAgent === 'hot-poem'"
+                type="primary"
+                size="small"
+                closable
+                @close="clearAgent"
+              >
+                <el-icon><TrendCharts /></el-icon>
+                热点诗词赏析
+              </el-tag>
+              <el-tag
+                v-if="selectedAgent === 'ai-create'"
+                type="success"
+                size="small"
+                closable
+                @close="clearAgent"
+              >
+                <el-icon><MagicStick /></el-icon>
+                AI创作发布
+              </el-tag>
+            </div>
+
             <el-input
               v-model="inputMessage"
               type="textarea"
               :rows="3"
-              placeholder="输入消息... (Enter 发送)"
+              :placeholder="getInputPlaceholder()"
               :disabled="isSending || isStreaming"
               @keydown.enter="handleSendMessage"
             />
@@ -218,7 +266,9 @@ import {
   VideoPlay,
   Folder,
   Refresh,
-  InfoFilled
+  InfoFilled,
+  TrendCharts,
+  MagicStick
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { SessionItem, QAPair, ChatMessage } from '@/api/type'
@@ -243,6 +293,7 @@ const userStore = useUserStore()
 const md: MarkdownIt = new MarkdownIt({
   html: false,  // 禁止渲染HTML标签
   linkify: true,
+  breaks: true,  // 支持换行（单个回车转换为 <br>）
   typographer: true,
   highlight: function (str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
@@ -280,6 +331,9 @@ const messageListRef = ref<HTMLDivElement>()
 const inputMessage = ref('')
 const isSending = ref(false)
 const lastUserQuery = ref('') // 记录最后一次用户问题，用于 B站推荐
+
+// AGENT 功能选择
+const selectedAgent = ref<'hot-poem' | 'ai-create' | null>(null)
 
 // 流式输出
 const isStreaming = ref(false)
@@ -397,6 +451,40 @@ const handleCreateSession = async () => {
   } finally {
     createLoading.value = false
   }
+}
+
+/**
+ * 选择 AGENT 功能（互斥选择）
+ */
+const selectAgent = (agentType: 'hot-poem' | 'ai-create') => {
+  // 如果点击的是已选中的，则取消选中
+  if (selectedAgent.value === agentType) {
+    selectedAgent.value = null
+  } else {
+    // 否则选中新的（会自动取消之前的选中）
+    selectedAgent.value = agentType
+  }
+  
+  // TODO: 后续实现具体功能
+}
+
+/**
+ * 清除 AGENT 功能选择
+ */
+const clearAgent = () => {
+  selectedAgent.value = null
+}
+
+/**
+ * 获取输入框占位符
+ */
+const getInputPlaceholder = () => {
+  if (selectedAgent.value === 'hot-poem') {
+    return '请输入您想了解的热点诗词... (Enter 发送)'
+  } else if (selectedAgent.value === 'ai-create') {
+    return '请描述您想创作的诗歌主题和风格... (Enter 发送)'
+  }
+  return '输入消息... (Enter 发送)'
 }
 
 /**
@@ -842,10 +930,37 @@ onBeforeUnmount(() => {
 })
 
 /**
- * 渲染 Markdown
+ * 渲染 Markdown（添加预处理以修复不规范格式）
  */
 const renderMarkdown = (content: string) => {
-  return md.render(content)
+  if (!content) return ''
+  
+  // 预处理：修复不规范的 markdown 格式
+  let processedContent = content
+  
+  // 1. 修复标题：识别行首的 # 号，确保 # 与内容之间有空格
+  // 支持 1-6 级标题: #内容 → # 内容
+  processedContent = processedContent.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
+  
+  // 2. 修复有序列表：识别行首的数字+点号，确保点号后有空格
+  // 1.内容 → 1. 内容
+  processedContent = processedContent.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
+  
+  // 3. 修复无序列表（星号）：识别行首的星号，确保星号后有空格
+  // *内容 → * 内容
+  processedContent = processedContent.replace(/^(\*)([^\s*])/gm, '$1 $2')
+  
+  // 4. 修复无序列表（短横线）：识别行首的短横线，确保短横线后有空格
+  // -内容 → - 内容
+  processedContent = processedContent.replace(/^(-)([^\s-])/gm, '$1 $2')
+  
+  // 5. 修复加粗：**文本** 确保前后有空格分隔（可选优化）
+  processedContent = processedContent.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
+  
+  // 6. 修复代码块：确保代码块标记独立一行
+  processedContent = processedContent.replace(/```(\w*)\n/g, '```$1\n')
+  
+  return md.render(processedContent)
 }
 
 /**
@@ -1006,6 +1121,24 @@ onMounted(() => {
       justify-content: center;
     }
 
+    .agent-buttons {
+      padding: 12px 20px;
+      border-bottom: 1px solid #e4e7ed;
+      background: #f5f7fa;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .el-button {
+        transition: all 0.3s;
+
+        &.active-agent {
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+        }
+      }
+    }
+
     .message-list {
       flex: 1;
       overflow-y: auto;
@@ -1074,25 +1207,80 @@ onMounted(() => {
             background: #f5f7fa;
             line-height: 1.6;
             word-wrap: break-word;
-            max-width: 70%;
+            max-width: 85%;
 
             &.streaming {
               animation: pulse 1.5s infinite;
             }
 
-            :deep(pre) {
-              margin: 8px 0;
-              border-radius: 4px;
-              overflow-x: auto;
+            // 标题样式（优化间距与行高）
+            :deep(h1) {
+              font-size: 24px;
+              font-weight: 700;
+              line-height: 1.3;
+              margin: 16px 0 8px 0;
+              padding-bottom: 8px;
+              border-bottom: 2px solid #dcdfe6;
+              color: #303133;
 
-              code {
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
+              &:first-child {
+                margin-top: 0;
               }
             }
 
+            :deep(h2) {
+              font-size: 20px;
+              font-weight: 600;
+              line-height: 1.3;
+              margin: 16px 0 8px 0;
+              padding-bottom: 6px;
+              border-bottom: 1px solid #e4e7ed;
+              color: #303133;
+
+              &:first-child {
+                margin-top: 0;
+              }
+            }
+
+            :deep(h3) {
+              font-size: 18px;
+              font-weight: 600;
+              line-height: 1.4;
+              margin: 16px 0 8px 0;
+              color: #606266;
+
+              &:first-child {
+                margin-top: 0;
+              }
+            }
+
+            :deep(h4) {
+              font-size: 16px;
+              font-weight: 600;
+              line-height: 1.4;
+              margin: 16px 0 8px 0;
+              color: #606266;
+
+              &:first-child {
+                margin-top: 0;
+              }
+            }
+
+            :deep(h5), :deep(h6) {
+              font-size: 14px;
+              font-weight: 600;
+              line-height: 1.4;
+              margin: 16px 0 8px 0;
+              color: #909399;
+
+              &:first-child {
+                margin-top: 0;
+              }
+            }
+
+            // 段落样式（增加段落间距）
             :deep(p) {
-              margin: 8px 0;
+              margin: 0 0 12px 0;
 
               &:first-child {
                 margin-top: 0;
@@ -1103,23 +1291,113 @@ onMounted(() => {
               }
             }
 
+            // 列表样式（优化缩进和间距）
             :deep(ul), :deep(ol) {
-              margin: 8px 0;
+              margin: 8px 0 12px 0;
               padding-left: 20px;
+
+              li {
+                margin: 4px 0;
+                line-height: 1.6;
+              }
             }
 
+            :deep(ul) {
+              li {
+                list-style-type: disc;
+              }
+
+              ul li {
+                list-style-type: circle;
+              }
+
+              ul ul li {
+                list-style-type: square;
+              }
+            }
+
+            // 引用块样式
             :deep(blockquote) {
               margin: 8px 0;
-              padding-left: 12px;
-              border-left: 3px solid #dcdfe6;
+              padding: 8px 12px;
+              border-left: 4px solid #409eff;
+              background: rgba(64, 158, 255, 0.05);
               color: #606266;
+
+              p {
+                margin: 4px 0;
+              }
             }
 
+            // 代码块样式
+            :deep(pre) {
+              margin: 8px 0;
+              border-radius: 4px;
+              overflow-x: auto;
+
+              code {
+                font-family: 'Courier New', Consolas, Monaco, monospace;
+                font-size: 14px;
+              }
+            }
+
+            // 行内代码样式
             :deep(code:not(pre code)) {
               background: rgba(0, 0, 0, 0.1);
               padding: 2px 6px;
               border-radius: 3px;
-              font-family: 'Courier New', monospace;
+              font-family: 'Courier New', Consolas, Monaco, monospace;
+              font-size: 13px;
+              color: #e83e8c;
+            }
+
+            // 分隔线样式
+            :deep(hr) {
+              margin: 16px 0;
+              border: none;
+              border-top: 2px solid #e4e7ed;
+            }
+
+            // 表格样式
+            :deep(table) {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 8px 0;
+
+              th, td {
+                border: 1px solid #dcdfe6;
+                padding: 8px 12px;
+                text-align: left;
+              }
+
+              th {
+                background: #f5f7fa;
+                font-weight: 600;
+              }
+
+              tr:nth-child(even) {
+                background: #fafafa;
+              }
+            }
+
+            // 链接样式
+            :deep(a) {
+              color: #409eff;
+              text-decoration: none;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+
+            // 强调样式
+            :deep(strong) {
+              font-weight: 600;
+              color: #303133;
+            }
+
+            :deep(em) {
+              font-style: italic;
             }
           }
 
@@ -1159,8 +1437,35 @@ onMounted(() => {
       .input-wrapper {
         position: relative;
 
+        .agent-badge {
+          position: absolute;
+          left: 12px;
+          top: 12px;
+          z-index: 10;
+
+          .el-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+            .el-icon {
+              font-size: 14px;
+            }
+          }
+        }
+
         :deep(.el-textarea__inner) {
           padding-right: 160px; // 给右侧图标留出空间
+          padding-left: 12px;
+        }
+
+        // 当有 AGENT 标识时，增加左侧内边距
+        &:has(.agent-badge) {
+          :deep(.el-textarea__inner) {
+            padding-left: 160px;
+          }
         }
       }
 

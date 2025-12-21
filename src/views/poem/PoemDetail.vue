@@ -88,70 +88,6 @@
             </el-button>
           </div>
         </el-card>
-
-        <!-- 对诗功能 -->
-        <el-card class="respond-card" shadow="hover">
-          <template #header>
-            <div class="section-header">
-              <el-icon><EditPen /></el-icon>
-              <span>对诗功能</span>
-            </div>
-          </template>
-
-          <el-form :model="respondForm" :rules="respondRules" ref="respondFormRef" label-width="100px">
-            <el-form-item label="对诗内容" prop="content">
-              <el-input
-                v-model="respondForm.content"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入您的对诗内容..."
-                maxlength="200"
-                show-word-limit
-              />
-            </el-form-item>
-
-            <el-form-item label="创作说明" prop="description">
-              <el-input
-                v-model="respondForm.description"
-                type="textarea"
-                :rows="3"
-                placeholder="可以说明您的创作思路、情感表达等（可选）"
-                maxlength="500"
-                show-word-limit
-              />
-            </el-form-item>
-
-            <el-form-item>
-              <el-button type="primary" @click="handleRespondSubmit" :loading="respondLoading">
-                <el-icon><Check /></el-icon>
-                提交对诗
-              </el-button>
-              <el-button @click="handleRespondReset">
-                <el-icon><RefreshLeft /></el-icon>
-                重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <!-- 对诗结果 -->
-          <div v-if="respondResult" class="respond-result">
-            <el-alert
-              title="对诗成功"
-              type="success"
-              :closable="false"
-              show-icon
-            >
-              <template #default>
-                <div class="result-content">
-                  <p><strong>您的对诗：</strong></p>
-                  <p class="respond-text">{{ respondResult.userPoem }}</p>
-                  <p v-if="respondResult.aiResponse"><strong>AI 点评：</strong></p>
-                  <p v-if="respondResult.aiResponse" class="ai-response">{{ respondResult.aiResponse }}</p>
-                </div>
-              </template>
-            </el-alert>
-          </div>
-        </el-card>
       </div>
 
       <el-empty v-else-if="!loading" description="未找到诗词信息" />
@@ -166,13 +102,10 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   ArrowLeft,
   Reading,
-  MagicStick,
-  EditPen,
-  Check,
-  RefreshLeft
+  MagicStick
 } from '@element-plus/icons-vue'
 import type { PoemDetail } from '@/api/type'
-import { getPoemDetail, getParsePoemPrompt, respondPoem } from '@/api/poem'
+import { getPoemDetail, getParsePoemPrompt } from '@/api/poem'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,27 +117,6 @@ const poemDetail = ref<PoemDetail | null>(null)
 // 智能解析
 const parsingLoading = ref(false)
 const parsePrompt = ref('')
-
-// 对诗表单
-const respondFormRef = ref<FormInstance>()
-const respondLoading = ref(false)
-const respondForm = ref({
-  content: '',
-  description: ''
-})
-
-const respondRules: FormRules = {
-  content: [
-    { required: true, message: '请输入对诗内容', trigger: 'blur' },
-    { min: 4, message: '对诗内容至少4个字', trigger: 'blur' }
-  ]
-}
-
-// 对诗结果
-const respondResult = ref<{
-  userPoem: string
-  aiResponse?: string
-} | null>(null)
 
 /**
  * 加载诗词详情
@@ -244,51 +156,6 @@ const handleIntelligentParse = async () => {
   } finally {
     parsingLoading.value = false
   }
-}
-
-/**
- * 提交对诗
- */
-const handleRespondSubmit = async () => {
-  if (!respondFormRef.value) return
-
-  await respondFormRef.value.validate(async (valid) => {
-    if (!valid) return
-
-    if (!poemDetail.value) {
-      ElMessage.error('诗词信息不存在')
-      return
-    }
-
-    respondLoading.value = true
-    try {
-      const res = await respondPoem({
-        user_sentence: respondForm.value.content
-      })
-
-      respondResult.value = {
-        userPoem: res.data.user_input,
-        aiResponse: `匹配句：${res.data.matched_clauses.join(', ')}\n\n下一句：${res.data.next_sentence}\n\n出处：《${res.data.poem_title}》- ${res.data.poem_author}`
-      }
-
-      ElMessage.success('对诗提交成功')
-      // 清空表单
-      respondForm.value = { content: '', description: '' }
-      respondFormRef.value?.resetFields()
-    } catch (error: any) {
-      ElMessage.error(error.message || '对诗提交失败')
-    } finally {
-      respondLoading.value = false
-    }
-  })
-}
-
-/**
- * 重置对诗表单
- */
-const handleRespondReset = () => {
-  respondFormRef.value?.resetFields()
-  respondResult.value = null
 }
 
 /**
