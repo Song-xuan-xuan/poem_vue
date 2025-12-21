@@ -15,18 +15,110 @@
       </el-input>
 
       <el-select
-        v-model="selectedTag"
-        placeholder="标签筛选"
+        v-model="selectedStyleTag"
+        placeholder="风格"
         clearable
         @change="handleSearch"
         class="tag-filter"
       >
-        <el-option label="全部" value="" />
-        <el-option label="诗词讨论" value="诗词讨论" />
-        <el-option label="创作分享" value="创作分享" />
-        <el-option label="学习交流" value="学习交流" />
-        <el-option label="问题求助" value="问题求助" />
-        <el-option label="资源分享" value="资源分享" />
+        <el-option label="搞笑诗" value="搞笑诗" />
+        <el-option label="藏头诗" value="藏头诗" />
+        <el-option label="抒情诗" value="抒情诗" />
+        <el-option label="哲理诗" value="哲理诗" />
+        <el-option label="叙事诗" value="叙事诗" />
+        <el-option label="荒诞诗" value="荒诞诗" />
+        <el-option label="意象诗" value="意象诗" />
+        <el-option label="口语诗" value="口语诗" />
+        <el-option label="朦胧诗" value="朦胧诗" />
+        <el-option label="讽刺诗" value="讽刺诗" />
+        <el-option label="浪漫主义" value="浪漫主义" />
+        <el-option label="现实主义" value="现实主义" />
+        <el-option label="极简风" value="极简风" />
+        <el-option label="复古风" value="复古风" />
+        <el-option label="先锋派" value="先锋派" />
+      </el-select>
+
+      <el-select
+        v-model="selectedThemeTag"
+        placeholder="主题"
+        clearable
+        @change="handleSearch"
+        class="tag-filter"
+      >
+        <el-option label="青春成长" value="青春成长" />
+        <el-option label="乡愁故里" value="乡愁故里" />
+        <el-option label="爱情告白" value="爱情告白" />
+        <el-option label="自然风物" value="自然风物" />
+        <el-option label="城市生活" value="城市生活" />
+        <el-option label="职场感悟" value="职场感悟" />
+        <el-option label="家国情怀" value="家国情怀" />
+        <el-option label="孤独迷茫" value="孤独迷茫" />
+        <el-option label="梦想希望" value="梦想希望" />
+        <el-option label="友情羁绊" value="友情羁绊" />
+        <el-option label="亲情思念" value="亲情思念" />
+        <el-option label="科幻幻想" value="科幻幻想" />
+        <el-option label="历史怀古" value="历史怀古" />
+        <el-option label="环保议题" value="环保议题" />
+        <el-option label="日常碎碎念" value="日常碎碎念" />
+      </el-select>
+
+      <el-select
+        v-model="selectedFormTag"
+        placeholder="形式"
+        clearable
+        @change="handleSearch"
+        class="tag-filter"
+      >
+        <el-option label="短诗" value="短诗" />
+        <el-option label="组诗" value="组诗" />
+        <el-option label="散文诗" value="散文诗" />
+        <el-option label="格律尝试" value="格律尝试" />
+        <el-option label="自由体" value="自由体" />
+        <el-option label="排比体" value="排比体" />
+        <el-option label="问答体" value="问答体" />
+        <el-option label="书信体" value="书信体" />
+        <el-option label="日记体" value="日记体" />
+        <el-option label="藏尾诗" value="藏尾诗" />
+        <el-option label="回文诗" value="回文诗" />
+        <el-option label="阶梯诗" value="阶梯诗" />
+        <el-option label="对话诗" value="对话诗" />
+      </el-select>
+
+      <el-select
+        v-model="selectedEmotionTag"
+        placeholder="情感"
+        clearable
+        @change="handleSearch"
+        class="tag-filter"
+      >
+        <el-option label="治愈系" value="治愈系" />
+        <el-option label="伤感风" value="伤感风" />
+        <el-option label="热血励志" value="热血励志" />
+        <el-option label="温暖治愈" value="温暖治愈" />
+        <el-option label="幽默诙谐" value="幽默诙谐" />
+        <el-option label="深沉压抑" value="深沉压抑" />
+        <el-option label="轻快明朗" value="轻快明朗" />
+        <el-option label="怅惘遗憾" value="怅惘遗憾" />
+        <el-option label="愤怒批判" value="愤怒批判" />
+        <el-option label="平和佛系" value="平和佛系" />
+      </el-select>
+
+      <el-select
+        v-model="selectedSceneTag"
+        placeholder="场景"
+        clearable
+        @change="handleSearch"
+        class="tag-filter"
+      >
+        <el-option label="即兴创作" value="即兴创作" />
+        <el-option label="命题写作" value="命题写作" />
+        <el-option label="节日特辑" value="节日特辑" />
+        <el-option label="毕业季" value="毕业季" />
+        <el-option label="旅行随记" value="旅行随记" />
+        <el-option label="深夜随笔" value="深夜随笔" />
+        <el-option label="春日限定" value="春日限定" />
+        <el-option label="秋日私语" value="秋日私语" />
+        <el-option label="应援创作" value="应援创作" />
       </el-select>
 
       <el-button type="primary" :icon="Plus" @click="showCreateDialog = true">
@@ -70,7 +162,7 @@
               <div class="stats">
                 <span class="stat-item">
                   <el-icon><ChatDotRound /></el-icon>
-                  {{ post.comment_total ?? post.comments?.length ?? 0 }}
+                  {{ post.comments?.length ?? 0 }}
                 </span>
               </div>
               <div class="actions">
@@ -182,11 +274,78 @@
             placeholder="选择风格标签（最如3个）"
             style="width: 100%"
           >
-            <el-option label="诗词讨论" value="诗词讨论" />
-            <el-option label="创作分享" value="创作分享" />
-            <el-option label="学习交流" value="学习交流" />
-            <el-option label="问题求助" value="问题求助" />
-            <el-option label="资源分享" value="资源分享" />
+            <el-option-group label="风格">
+              <el-option label="搞笑诗" value="搞笑诗" />
+              <el-option label="藏头诗" value="藏头诗" />
+              <el-option label="拒情诗" value="拒情诗" />
+              <el-option label="哲理诗" value="哲理诗" />
+              <el-option label="叙事诗" value="叙事诗" />
+              <el-option label="荒诞诗" value="荒诞诗" />
+              <el-option label="意象诗" value="意象诗" />
+              <el-option label="口语诗" value="口语诗" />
+              <el-option label="朦胧诗" value="朦胧诗" />
+              <el-option label="讥刺诗" value="讥刺诗" />
+              <el-option label="浪漫主义" value="浪漫主义" />
+              <el-option label="现实主义" value="现实主义" />
+              <el-option label="极简风" value="极简风" />
+              <el-option label="复古风" value="复古风" />
+              <el-option label="先锋派" value="先锋派" />
+            </el-option-group>
+            <el-option-group label="主题">
+              <el-option label="青春成长" value="青春成长" />
+              <el-option label="乡愁故里" value="乡愁故里" />
+              <el-option label="爱情告白" value="爱情告白" />
+              <el-option label="自然风物" value="自然风物" />
+              <el-option label="城市生活" value="城市生活" />
+              <el-option label="职场感悟" value="职场感悟" />
+              <el-option label="家国情怀" value="家国情怀" />
+              <el-option label="孤独迷茫" value="孤独迷茫" />
+              <el-option label="梦想希望" value="梦想希望" />
+              <el-option label="友情羁绊" value="友情羁绊" />
+              <el-option label="亲情思念" value="亲情思念" />
+              <el-option label="科幻幻想" value="科幻幻想" />
+              <el-option label="历史怀古" value="历史怀古" />
+              <el-option label="环保议题" value="环保议题" />
+              <el-option label="日常碎碎念" value="日常碎碎念" />
+            </el-option-group>
+            <el-option-group label="形式">
+              <el-option label="短诗" value="短诗" />
+              <el-option label="组诗" value="组诗" />
+              <el-option label="散文诗" value="散文诗" />
+              <el-option label="格律尝试" value="格律尝试" />
+              <el-option label="自由体" value="自由体" />
+              <el-option label="排比体" value="排比体" />
+              <el-option label="问答体" value="问答体" />
+              <el-option label="书信体" value="书信体" />
+              <el-option label="日记体" value="日记体" />
+              <el-option label="藏尾诗" value="藏尾诗" />
+              <el-option label="回文诗" value="回文诗" />
+              <el-option label="阶梯诗" value="阶梯诗" />
+              <el-option label="对话诗" value="对话诗" />
+            </el-option-group>
+            <el-option-group label="情感">
+              <el-option label="治愈系" value="治愈系" />
+              <el-option label="伤感风" value="伤感风" />
+              <el-option label="热血励志" value="热血励志" />
+              <el-option label="温暖治愈" value="温暖治愈" />
+              <el-option label="幽默诧谐" value="幽默诧谐" />
+              <el-option label="深沉压抑" value="深沉压抑" />
+              <el-option label="轻快明朗" value="轻快明朗" />
+              <el-option label="怅惘遗憾" value="怅惘遗憾" />
+              <el-option label="愤怒批判" value="愤怒批判" />
+              <el-option label="平和佛系" value="平和佛系" />
+            </el-option-group>
+            <el-option-group label="场景">
+              <el-option label="即兴创作" value="即兴创作" />
+              <el-option label="命题写作" value="命题写作" />
+              <el-option label="节日特辑" value="节日特辑" />
+              <el-option label="毕业季" value="毕业季" />
+              <el-option label="旅行随记" value="旅行随记" />
+              <el-option label="深夜随笔" value="深夜随笔" />
+              <el-option label="春日限定" value="春日限定" />
+              <el-option label="秋日私语" value="秋日私语" />
+              <el-option label="应援创作" value="应援创作" />
+            </el-option-group>
           </el-select>
         </el-form-item>
       </el-form>
@@ -224,7 +383,11 @@ const { toggleLike, toggleCollect } = useLikeAndFavor()
 
 // 搜索和筛选
 const searchKeyword = ref('')
-const selectedTag = ref('')
+const selectedStyleTag = ref('')
+const selectedThemeTag = ref('')
+const selectedFormTag = ref('')
+const selectedEmotionTag = ref('')
+const selectedSceneTag = ref('')
 
 // 帖子列表
 const loading = ref(false)
@@ -274,14 +437,23 @@ const loadPosts = async () => {
   try {
     let res
     
+    // 收集所有选中的标签
+    const selectedTags = [
+      selectedStyleTag.value,
+      selectedThemeTag.value,
+      selectedFormTag.value,
+      selectedEmotionTag.value,
+      selectedSceneTag.value
+    ].filter(tag => tag && tag.trim())
+    
     // 根据搜索关键词、风格标签或主页加载
     if (searchKeyword.value.trim()) {
       // 关键词搜索（每页 10 条）
       res = await searchPostsByKeyword(searchKeyword.value.trim(), currentPage.value)
       pageSize.value = 10
-    } else if (selectedTag.value) {
-      // 风格筛选（每页 10 条）
-      res = await searchPostsByStyle(selectedTag.value, currentPage.value)
+    } else if (selectedTags.length > 0) {
+      // 风格筛选（使用第一个选中的标签，每页 10 条）
+      res = await searchPostsByStyle(selectedTags[0], currentPage.value)
       pageSize.value = 10
     } else {
       // 主页列表（每页 20 条）
@@ -454,14 +626,15 @@ onMounted(() => {
     gap: 12px;
     margin-bottom: 20px;
     align-items: center;
+    flex-wrap: wrap;
 
     .search-input {
       flex: 1;
-      max-width: 400px;
+      min-width: 300px;
     }
 
     .tag-filter {
-      width: 150px;
+      width: 140px;
     }
   }
 

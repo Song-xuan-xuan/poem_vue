@@ -52,55 +52,66 @@
         </div>
       </div>
     </el-card>
-    <!-- 诗词列表 -->
-    <div class="poem-list">
-      <el-empty v-if="!loading && poems.length === 0" description="暂无诗词数据" />
-      <el-row :gutter="20" v-else>
-        <el-col
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :lg="6"
-          v-for="poem in poems"
-          :key="poem.id"
-        >
-          <el-card
-            class="poem-card"
-            shadow="hover"
-            @click="goToDetail(poem.id)"
-          >
-            <h3 class="poem-title">{{ poem.title }}</h3>
-            <p class="poem-author">{{ poem.author }}</p>
-            <div class="poem-preview">
-              {{ poem.part_content }}
-            </div>
-            <div class="poem-footer" v-if="poem.tags && poem.tags.length > 0">
-              <el-tag
-                v-for="tag in poem.tags.slice(0, 3)"
-                :key="tag"
-                size="small"
-                type="info"
-                effect="plain"
-              >
-                {{ tag }}
-              </el-tag>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
 
-      <!-- 加载更多提示 -->
-      <div class="load-more" v-if="poems.length > 0">
-        <div v-if="loading" class="loading-text">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <span>加载中...</span>
+    <!-- 主内容区：左侧诗词列表 + 右侧对诗功能 -->
+    <div class="main-content">
+      <!-- 左侧：诗词列表 -->
+      <div class="poem-list-container">
+        <div class="poem-list">
+          <el-empty v-if="!loading && poems.length === 0" description="暂无诗词数据" />
+          <el-row :gutter="20" v-else>
+            <el-col
+              :xs="24"
+              :sm="12"
+              :md="8"
+              :lg="6"
+              v-for="poem in poems"
+              :key="poem.id"
+            >
+              <el-card
+                class="poem-card"
+                shadow="hover"
+                @click="goToDetail(poem.id)"
+              >
+                <h3 class="poem-title">{{ poem.title }}</h3>
+                <p class="poem-author">{{ poem.author }}</p>
+                <div class="poem-preview">
+                  {{ poem.part_content }}
+                </div>
+                <div class="poem-footer" v-if="poem.tags && poem.tags.length > 0">
+                  <el-tag
+                    v-for="tag in poem.tags.slice(0, 3)"
+                    :key="tag"
+                    size="small"
+                    type="info"
+                    effect="plain"
+                  >
+                    {{ tag }}
+                  </el-tag>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+
+          <!-- 加载更多提示 -->
+          <div class="load-more" v-if="poems.length > 0">
+            <div v-if="loading" class="loading-text">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>加载中...</span>
+            </div>
+            <div v-else-if="hasMore" class="load-more-text">
+              向下滚动加载更多
+            </div>
+            <div v-else class="no-more-text">
+              已加载全部诗词
+            </div>
+          </div>
         </div>
-        <div v-else-if="hasMore" class="load-more-text">
-          向下滚动加载更多
-        </div>
-        <div v-else class="no-more-text">
-          已加载全部诗词
-        </div>
+      </div>
+
+      <!-- 右侧：对诗功能 -->
+      <div class="sidebar">
+        <PoemRespond />
       </div>
     </div>
   </div>
@@ -112,6 +123,7 @@ import { useRouter } from 'vue-router'
 import { Search, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { usePoemSearch } from '@/composables/usePoemSearch'
+import PoemRespond from '@/components/PoemRespond.vue'
 
 const router = useRouter()
 
@@ -325,6 +337,22 @@ onUnmounted(() => {
     }
   }
 
+  .main-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+
+    .poem-list-container {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar {
+      width: 320px;
+      flex-shrink: 0;
+    }
+  }
+
   .poem-list {
     min-height: 400px;
     margin-bottom: 20px;
@@ -425,15 +453,11 @@ onUnmounted(() => {
   .poem-market {
     padding: 12px;
 
-    .daily-poem-card {
-      .daily-poem-content {
-        .poem-title {
-          font-size: 20px;
-        }
+    .main-content {
+      flex-direction: column;
 
-        .poem-paragraphs {
-          font-size: 14px;
-        }
+      .sidebar {
+        width: 100%;
       }
     }
   }
