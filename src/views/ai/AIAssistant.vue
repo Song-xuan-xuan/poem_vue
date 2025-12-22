@@ -179,7 +179,7 @@
                 @close="clearAgent"
               >
                 <el-icon><MagicStick /></el-icon>
-                AI创作发布
+                热点诗词赏析
               </el-tag>
             </div>
 
