@@ -131,6 +131,7 @@ const features = [
   width: 100%;
   max-width: $content-max-width;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 // ==================== Hero 区：左右布局 ====================
@@ -140,7 +141,9 @@ const features = [
   grid-template-columns: 1fr 400px;
   gap: $spacing-3xl;
   align-items: center;
-  min-height: calc(100vh - $navbar-height - $spacing-3xl * 2);
+  // 说明：HomeView 在 MainLayout 的主内容区内渲染，主内容区存在上下 padding。
+  // 这里额外减去 $spacing-xl * 2，避免出现“多出来一点点”的外层滚动条。
+  min-height: calc(100vh - $navbar-height - $spacing-3xl * 2 - $spacing-xl * 2);
   padding: $spacing-3xl 0;
 
   // 平板响应式

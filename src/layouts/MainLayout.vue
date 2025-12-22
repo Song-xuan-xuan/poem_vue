@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
+
+const route = useRoute()
+const isAIPage = computed(() => route.path === '/ai')
 </script>
 
 <template>
-  <div class="main-layout">
+  <div class="main-layout" :class="{ 'main-layout--ai': isAIPage }">
     <!-- 统一背景层：竹影水墨纹理 -->
     <div class="layout-background">
       <div class="bamboo-texture"></div>
@@ -16,7 +21,7 @@ import NavBar from '@/components/NavBar.vue'
     </header>
 
     <!-- 主要内容区域：无背景色，融入整体背景 -->
-    <main class="layout-main">
+    <main class="layout-main" :class="{ 'layout-main--ai': isAIPage }">
       <RouterView />
     </main>
 
@@ -30,8 +35,14 @@ import NavBar from '@/components/NavBar.vue'
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100vh; // 默认：允许内容撑开，浏览器整体滚动
+  // overflow 默认 visible，滚动条在浏览器最右侧
+
+  // AI 页面：固定全屏，禁止浏览器滚动
+  &.main-layout--ai {
+    height: 100vh;
+    overflow: hidden;
+  }
 }
 
 // ==================== 统一背景层 ====================
@@ -124,6 +135,7 @@ import NavBar from '@/components/NavBar.vue'
   position: sticky;
   top: 0;
   z-index: $z-index-navbar;
+  flex-shrink: 0; // 防止被压缩
 
   // 毛玻璃效果（glassmorphism）
   background: $gradient-nav-bg;
@@ -162,13 +174,35 @@ import NavBar from '@/components/NavBar.vue'
   width: 100%;
   margin: 0 auto;
 
+  // AI 助手页面不需要内边距和最大宽度限制
+  &:has(.ai-assistant) {
+    padding: 0;
+    max-width: none;
+  }
+
+  // 兼容 scoped/:has 不生效的情况：AI 路由强制去除内边距与宽度限制
+  &.layout-main--ai {
+    padding: 0;
+    max-width: none;
+    height: 100%; // 填满父容器（AI 页父容器已固定 100vh）
+    overflow: hidden; // AI 页不出现滚动条
+  }
+
   // 响应式调整
   @media (max-width: $breakpoint-tablet) {
     padding: $spacing-lg $spacing-md;
+    
+    &:has(.ai-assistant) {
+      padding: 0;
+    }
   }
 
   @media (max-width: $breakpoint-mobile) {
     padding: $spacing-md $spacing-sm;
+    
+    &:has(.ai-assistant) {
+      padding: 0;
+    }
   }
 }
 

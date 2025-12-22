@@ -1074,9 +1074,10 @@ onMounted(async () => {
 <style scoped lang="scss">
 .ai-assistant {
   display: flex;
-  height: calc(100vh - 100px);
+  height: 100%;
   gap: 0;
   background: #f5f7fa;
+  overflow: hidden; // 防止外层滚动
 
   .session-sidebar {
     width: 280px;
@@ -1084,6 +1085,8 @@ onMounted(async () => {
     border-right: 1px solid #e4e7ed;
     display: flex;
     flex-direction: column;
+    height: 100%; // 跟随 .ai-assistant 高度
+    overflow: hidden; // 防止侧边栏整体滚动
 
     .sidebar-header {
       padding: 16px;
@@ -1175,6 +1178,8 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     background: #fff;
+    height: 100%; // 跟随 .ai-assistant 高度
+    overflow: hidden; // 防止容器整体滚动
 
     .chat-empty {
       flex: 1;
@@ -1190,6 +1195,7 @@ onMounted(async () => {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0; // 防止按钮区域被压缩
 
       .el-button {
         transition: all 0.3s;
@@ -1206,6 +1212,7 @@ onMounted(async () => {
       overflow-y: auto;
       padding: 20px;
       scroll-behavior: smooth;
+      min-height: 0; // 重要：允许 flex 子元素正确收缩
 
       .message-item {
         display: flex;
@@ -1495,6 +1502,8 @@ onMounted(async () => {
     .input-area {
       border-top: 1px solid #e4e7ed;
       padding: 16px;
+      flex-shrink: 0; // 防止输入区域被压缩
+      background: #fff; // 确保背景不透明
 
       .input-wrapper {
         position: relative;
@@ -1595,17 +1604,20 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .ai-assistant {
     flex-direction: column;
-    height: auto;
+    height: 100%;
 
     .session-sidebar {
       width: 100%;
       height: 200px;
       border-right: none;
       border-bottom: 1px solid #e4e7ed;
+      flex-shrink: 0; // 防止被压缩
     }
 
     .chat-container {
-      height: calc(100vh - 300px);
+      flex: 1; // 占据剩余空间
+      height: auto; // 自动计算高度
+      min-height: 0; // 允许正确收缩
     }
   }
 }
