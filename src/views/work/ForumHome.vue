@@ -160,10 +160,6 @@
             <!-- 帖子统计 -->
             <div class="post-footer" @click.stop>
               <div class="stats">
-                <span class="stat-item">
-                  <el-icon><ChatDotRound /></el-icon>
-                  {{ post.comments?.length ?? 0 }}
-                </span>
               </div>
               <div class="actions">
                 <el-button
