@@ -18,7 +18,11 @@
 
           <el-divider />
 
-          <div class="poem-content">
+          <div 
+            class="poem-content" 
+            @mouseup="handleTextSelection"
+            @touchend="handleTextSelection"
+          >
             <p v-for="(para, index) in poemDetail.paragraphs" :key="index" class="poem-line">
               {{ para }}
             </p>
@@ -63,9 +67,38 @@
             @click="handleIntelligentParse"
           >
             <el-icon><MagicStick /></el-icon>
-            跳转到 AI 助手解析
+            解析整首诗词
           </el-button>
         </el-card>
+
+        <!-- 浮动解析按钮 -->
+        <transition name="fade">
+          <div
+            v-if="showFloatingButton"
+            class="floating-parse-button"
+            :style="{
+              top: floatingButtonPosition.top + 'px',
+              left: floatingButtonPosition.left + 'px'
+            }"
+          >
+            <el-button
+              type="primary"
+              size="small"
+              :loading="parsingLoading"
+              @click="handleParseSelectedText"
+            >
+              <el-icon><MagicStick /></el-icon>
+              AI 解析
+            </el-button>
+            <el-button
+              size="small"
+              circle
+              :icon="Close"
+              @click="hideFloatingButton"
+              class="close-btn"
+            />
+          </div>
+        </transition>
       </div>
 
       <el-empty v-else-if="!loading" description="未找到诗词信息" />
@@ -74,13 +107,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   ArrowLeft,
   Reading,
-  MagicStick
+  MagicStick,
+  Close
 } from '@element-plus/icons-vue'
 import type { PoemDetail } from '@/api/type'
 import { getPoemDetail, getParsePoemPrompt } from '@/api/poem'
@@ -95,6 +129,11 @@ const poemDetail = ref<PoemDetail | null>(null)
 
 // 智能解析
 const parsingLoading = ref(false)
+
+// 文本选中相关
+const selectedText = ref('')
+const showFloatingButton = ref(false)
+const floatingButtonPosition = ref({ top: 0, left: 0 })
 
 /**
  * 加载诗词详情
@@ -155,6 +194,82 @@ const handleIntelligentParse = async () => {
 }
 
 /**
+ * 处理文本选中事件
+ */
+const handleTextSelection = () => {
+  const selection = window.getSelection()
+  const text = selection?.toString().trim()
+  
+  if (text && text.length > 0) {
+    selectedText.value = text
+    
+    // 获取选中文本的位置
+    const range = selection?.getRangeAt(0)
+    const rect = range?.getBoundingClientRect()
+    
+    if (rect) {
+      // 计算浮动按钮位置（在选中文字上方居中）
+      floatingButtonPosition.value = {
+        top: rect.top + window.scrollY - 50, // 在选中文字上方 50px
+        left: rect.left + window.scrollX + rect.width / 2 - 60 // 居中对齐，按钮宽度约 120px
+      }
+      showFloatingButton.value = true
+    }
+  } else {
+    // 没有选中文字，隐藏按钮
+    showFloatingButton.value = false
+    selectedText.value = ''
+  }
+}
+
+/**
+ * 隐藏浮动按钮
+ */
+const hideFloatingButton = () => {
+  showFloatingButton.value = false
+  selectedText.value = ''
+}
+
+/**
+ * 使用选中的文本进行智能解析
+ */
+const handleParseSelectedText = async () => {
+  if (!selectedText.value) return
+  
+  parsingLoading.value = true
+  try {
+    // 1. 获取智能解析提示词（使用选中的文本）
+    const res = await getParsePoemPrompt(selectedText.value)
+    const prompt = res.data.prompt
+
+    // 2. 创建新会话
+    const sessionId = crypto.randomUUID()
+    const sessionRes = await createSession({
+      session_id: sessionId,
+      name: `诗句解析 - ${selectedText.value.substring(0, 10)}...`
+    })
+
+    // 3. 跳转到 AI 助手页面，并传递会话ID和提示词
+    router.push({
+      path: '/ai',
+      query: {
+        sessionId: sessionRes.data.session_id,
+        autoSend: prompt
+      }
+    })
+
+    ElMessage.success('正在跳转到 AI 助手...')
+    
+    // 隐藏浮动按钮
+    hideFloatingButton()
+  } catch (error: any) {
+    ElMessage.error(error.message || '获取智能解析失败')
+  } finally {
+    parsingLoading.value = false
+  }
+}
+
+/**
  * 格式化赏析内容
  */
 const formatAppreciation = (text: string) => {
@@ -175,6 +290,20 @@ const goBack = () => {
 
 onMounted(() => {
   loadPoemDetail()
+  
+  // 点击页面其他区域时隐藏浮动按钮
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    // 如果点击的不是浮动按钮本身，则隐藏
+    if (!target.closest('.floating-parse-button') && !target.closest('.poem-content')) {
+      hideFloatingButton()
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  // 清理事件监听器
+  document.removeEventListener('click', hideFloatingButton)
 })
 </script>
 
@@ -226,6 +355,8 @@ onMounted(() => {
       padding: 30px 0;
       text-align: center;
       line-height: 2.5;
+      user-select: text; // 允许文本选择
+      cursor: text; // 鼠标样式改为文本选择
 
       .poem-line {
         font-size: 20px;
@@ -233,6 +364,12 @@ onMounted(() => {
         margin: 12px 0;
         font-weight: 400;
         letter-spacing: 2px;
+        
+        // 选中文本的高亮样式
+        &::selection {
+          background: #409eff;
+          color: #fff;
+        }
       }
     }
 
@@ -326,6 +463,50 @@ onMounted(() => {
           letter-spacing: 1px;
         }
       }
+    }
+  }
+
+  // 浮动解析按钮
+  .floating-parse-button {
+    position: absolute;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: fadeInUp 0.3s ease;
+
+    .close-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      min-height: 24px;
+    }
+  }
+
+  // 淡入淡出动画
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  // 浮动按钮出现动画
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }
