@@ -39,6 +39,12 @@ const router = createRouter({
       }
     },
 
+    // 兼容旧路径：/ai-assistant -> /ai
+    {
+      path: '/ai-assistant',
+      redirect: '/ai'
+    },
+
     // ==================== 嵌套路由（使用 MainLayout）====================
     {
       path: '/',

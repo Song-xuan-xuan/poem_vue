@@ -61,32 +61,10 @@
             type="primary"
             :loading="parsingLoading"
             @click="handleIntelligentParse"
-            v-if="!parsePrompt"
           >
             <el-icon><MagicStick /></el-icon>
-            获取智能解析
+            跳转到 AI 助手解析
           </el-button>
-
-          <div v-else class="parse-result">
-            <el-alert
-              title="AI 解析提示词"
-              type="success"
-              :closable="false"
-              show-icon
-            >
-              <template #default>
-                <p class="prompt-text">{{ parsePrompt }}</p>
-              </template>
-            </el-alert>
-            <el-button
-              text
-              type="primary"
-              @click="parsePrompt = ''"
-              style="margin-top: 12px"
-            >
-              重新获取
-            </el-button>
-          </div>
         </el-card>
       </div>
 
@@ -106,6 +84,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { PoemDetail } from '@/api/type'
 import { getPoemDetail, getParsePoemPrompt } from '@/api/poem'
+import { createSession } from '@/api/session'
 
 const route = useRoute()
 const router = useRouter()
@@ -116,7 +95,6 @@ const poemDetail = ref<PoemDetail | null>(null)
 
 // 智能解析
 const parsingLoading = ref(false)
-const parsePrompt = ref('')
 
 /**
  * 加载诗词详情
@@ -141,16 +119,34 @@ const loadPoemDetail = async () => {
 }
 
 /**
- * 智能解析
+ * 智能解析 - 跳转到 AI 助手并自动发送
  */
 const handleIntelligentParse = async () => {
   if (!poemDetail.value) return
 
   parsingLoading.value = true
   try {
+    // 1. 获取智能解析提示词
     const res = await getParsePoemPrompt(poemDetail.value.title)
-    parsePrompt.value = res.data.prompt
-    ElMessage.success('获取智能解析成功')
+    const prompt = res.data.prompt
+
+    // 2. 创建新会话
+    const sessionId = crypto.randomUUID()
+    const sessionRes = await createSession({
+      session_id: sessionId,
+      name: `诗词解析 - ${poemDetail.value.title}`
+    })
+
+    // 3. 跳转到 AI 助手页面，并传递会话ID和提示词
+    router.push({
+      path: '/ai',
+      query: {
+        sessionId: sessionRes.data.session_id,
+        autoSend: prompt
+      }
+    })
+
+    ElMessage.success('正在跳转到 AI 助手...')
   } catch (error: any) {
     ElMessage.error(error.message || '获取智能解析失败')
   } finally {
@@ -274,14 +270,6 @@ onMounted(() => {
       :deep(p) {
         margin: 12px 0;
         text-indent: 2em;
-      }
-    }
-
-    .parse-result {
-      .prompt-text {
-        line-height: 1.8;
-        color: #606266;
-        white-space: pre-wrap;
       }
     }
 

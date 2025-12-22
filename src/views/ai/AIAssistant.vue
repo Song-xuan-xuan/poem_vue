@@ -253,6 +253,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Plus,
   Edit,
@@ -288,6 +289,8 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 
 const userStore = useUserStore()
+const route = useRoute()
+const router = useRouter()
 
 // Markdown 渲染器（收紧HTML渲染策略）
 const md: MarkdownIt = new MarkdownIt({
@@ -1045,8 +1048,26 @@ const formatMessageTime = (timestamp: number) => {
   return `${hours}:${minutes}`
 }
 
-onMounted(() => {
-  loadSessions()
+onMounted(async () => {
+  await loadSessions()
+  
+  // 处理从其他页面跳转过来的自动发送逻辑
+  const query = route.query
+  if (query.sessionId && query.autoSend) {
+    const sessionId = query.sessionId as string
+    const autoSendMessage = query.autoSend as string
+    
+    // 选中指定会话
+    await handleSelectSession(sessionId)
+    
+    // 自动填充消息并发送
+    inputMessage.value = autoSendMessage
+    await nextTick()
+    handleSendMessage()
+    
+    // 清除 URL 参数（避免刷新页面时重复发送）
+    router.replace({ path: '/ai' })
+  }
 })
 </script>
 
