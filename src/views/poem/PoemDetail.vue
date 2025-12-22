@@ -7,7 +7,12 @@
       <div v-if="!loading && poemDetail">
         <!-- 诗词主体内容 -->
         <el-card class="poem-card" shadow="hover">
-          <div class="poem-header">
+          <div 
+            ref="poemHeaderRef"
+            class="poem-header"
+            @mouseup="handleTextSelection($event)"
+            @touchend="handleTextSelection($event)"
+          >
             <h1 class="poem-title">{{ poemDetail.title }}</h1>
             <div class="poem-meta">
               <span v-if="poemDetail.dynasty" class="dynasty">{{ poemDetail.dynasty }}</span>
@@ -118,6 +123,7 @@ const selectedText = ref('')
 const showFloatingButton = ref(false)
 const floatingButtonPosition = ref({ top: 0, left: 0 })
 const poemContentRef = ref<HTMLElement | null>(null)
+const poemHeaderRef = ref<HTMLElement | null>(null)
 
 /**
  * 加载诗词详情
@@ -171,13 +177,19 @@ const handleTextSelection = (e?: MouseEvent | TouchEvent) => {
     return
   }
 
-  // 2) 选区必须发生在 poem-content 内（避免别处选中也弹按钮）
-  const poemEl = poemContentRef.value
-  if (poemEl && selection && selection.rangeCount > 0) {
+  // 2) 选区必须发生在 poem-header 或 poem-content 内（避免别处选中也弹按钮）
+  const poemContentEl = poemContentRef.value
+  const poemHeaderEl = poemHeaderRef.value
+  if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0)
     const container = range.commonAncestorContainer
     const containerEl = container.nodeType === 1 ? (container as Element) : container.parentElement
-    if (!containerEl || !poemEl.contains(containerEl)) {
+    
+    // 检查选区是否在标题或内容区域内
+    const isInHeader = poemHeaderEl && containerEl && poemHeaderEl.contains(containerEl)
+    const isInContent = poemContentEl && containerEl && poemContentEl.contains(containerEl)
+    
+    if (!isInHeader && !isInContent) {
       hideFloatingButton()
       return
     }
@@ -292,8 +304,12 @@ onMounted(() => {
   // 点击页面其他区域时隐藏浮动按钮
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
-    // 如果点击的不是浮动按钮本身，则隐藏
-    if (!target.closest('.floating-parse-button') && !target.closest('.poem-content')) {
+    // 如果点击的不是浮动按钮、标题区域或内容区域，则隐藏
+    if (
+      !target.closest('.floating-parse-button') && 
+      !target.closest('.poem-header') && 
+      !target.closest('.poem-content')
+    ) {
       hideFloatingButton()
     }
   })
@@ -326,12 +342,20 @@ onBeforeUnmount(() => {
     .poem-header {
       text-align: center;
       padding: 20px 0;
+      user-select: text; // 允许文本选择
+      cursor: text; // 鼠标样式改为文本选择
 
       .poem-title {
         font-size: 32px;
         margin: 0 0 16px 0;
         color: #303133;
         font-weight: 600;
+        
+        // 选中文本的高亮样式
+        &::selection {
+          background: #409eff;
+          color: #fff;
+        }
       }
 
       .poem-meta {
@@ -345,6 +369,12 @@ onBeforeUnmount(() => {
         .dynasty,
         .author {
           font-weight: 500;
+          
+          // 选中文本的高亮样式
+          &::selection {
+            background: #409eff;
+            color: #fff;
+          }
         }
       }
     }

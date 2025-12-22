@@ -14,9 +14,9 @@ const activeIndex = computed(() => route.path)
 // 导航菜单项
 const menuItems = [
   { name: '首页', path: '/', icon: 'House' },
-  { name: '诗词集市', path: '/poem/market', icon: 'Reading' },
-  { name: '论坛社区', path: '/forum', icon: 'ChatDotRound' },
-  { name: 'AI助手', path: '/ai', icon: 'ChatLineRound' }
+  { name: '诗词学习', path: '/poem/market', icon: 'Reading' },
+  { name: '创作社区', path: '/forum', icon: 'ChatDotRound' },
+  { name: 'AI问答', path: '/ai', icon: 'ChatLineRound' }
 ]
 
 // 未登录点击导航项时打开全局弹窗
