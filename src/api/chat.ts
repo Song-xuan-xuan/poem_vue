@@ -87,15 +87,21 @@ export const streamDialogWithFetch = async (
   sessionId: string,
   onMessage: (content: string, isFinal: boolean, fullContent: string) => void,
   onError?: (error: Error) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
+  options?: { signal?: AbortSignal }
 ): Promise<void> => {
   const isMock = import.meta.env.VITE_USE_MOCK === 'true'
   const userStore = useUserStore()
   const token = userStore.accessToken || localStorage.getItem('access_token')
+  const signal = options?.signal
   
   // Mock 模式：使用 axios 请求，然后前端模拟流式输出
   if (isMock) {
     try {
+      if (signal?.aborted) {
+        return
+      }
+
       const res = await request.get<Result<{ stream: boolean; question_id: string; full_content: string }>>('/api/chat/dialog/stream', {
         params: {
           query,
@@ -115,6 +121,10 @@ export const streamDialogWithFetch = async (
       const delay = () => Math.floor(Math.random() * 51) + 50 // 50-100ms
 
       const streamChunk = () => {
+        if (signal?.aborted) {
+          return
+        }
+
         if (currentIndex >= fullContent.length) {
           // 发送最终消息
           onMessage('', true, fullContent)
@@ -155,7 +165,8 @@ export const streamDialogWithFetch = async (
       headers: {
         'Authorization': token ? `Bearer ${token}` : '',
         'Accept': 'text/event-stream'
-      }
+      },
+      signal
     })
 
     if (!response.ok) {
@@ -215,6 +226,10 @@ export const streamDialogWithFetch = async (
 
     if (onComplete) onComplete()
   } catch (error) {
+    if ((error as any)?.name === 'AbortError') {
+      // 用户主动取消
+      return
+    }
     if (onError) onError(error as Error)
     throw error
   }

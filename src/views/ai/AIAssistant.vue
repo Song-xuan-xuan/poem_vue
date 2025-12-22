@@ -340,6 +340,7 @@ const isStreaming = ref(false)
 const streamingContent = ref('')
 const currentStreamingMessageId = ref<string>('')
 const currentQuestionId = ref<string>('') // 后端的 question_id
+const streamAbortController = ref<AbortController | null>(null)
 
 // 多模态输入
 const {
@@ -635,6 +636,12 @@ const handleSendMessage = async () => {
   streamingContent.value = ''
   currentStreamingMessageId.value = `ai_${Date.now()}`
   currentQuestionId.value = '' // 重置
+
+  // 中断上一次未完成的流式请求（避免并发导致重复渲染）
+  if (streamAbortController.value) {
+    streamAbortController.value.abort()
+  }
+  streamAbortController.value = new AbortController()
   
   // 标记是否已获取 question_id
   let hasQuestionId = false
@@ -645,6 +652,9 @@ const handleSendMessage = async () => {
       currentSessionId.value,
       // onMessage
       async (content: string, isFinal: boolean, fullContent: string) => {
+        // 如果已停止流式（用户点击停止或其它原因），忽略后续回调
+        if (!isStreaming.value) return
+
         // 在收到第一个 chunk 后获取 question_id
         if (!hasQuestionId && content) {
           hasQuestionId = true
@@ -691,6 +701,7 @@ const handleSendMessage = async () => {
           isStreaming.value = false
           streamingContent.value = ''
           currentQuestionId.value = '' // 清空
+          streamAbortController.value = null
         } else {
           // 流式拼接
           streamingContent.value += content
@@ -699,22 +710,28 @@ const handleSendMessage = async () => {
       },
       // onError
       (error: Error) => {
+        if ((error as any)?.name === 'AbortError') return
         ElMessage.error(error.message || '发送消息失败')
         isStreaming.value = false
         streamingContent.value = ''
+        streamAbortController.value = null
       },
       // onComplete
       () => {
         isStreaming.value = false
         streamingContent.value = ''
+        streamAbortController.value = null
         // 刷新会话列表
         loadSessions()
-      }
+      },
+      { signal: streamAbortController.value.signal }
     )
   } catch (error: any) {
+    if (error?.name === 'AbortError') return
     ElMessage.error(error.message || '发送消息失败')
     isStreaming.value = false
     streamingContent.value = ''
+    streamAbortController.value = null
   }
 }
 
@@ -899,13 +916,20 @@ const handleBilibiliRecommend = async () => {
  * 同时调用后端 stopQA 接口，对齐 api.md 的状态管理
  */
 const handleStopGeneration = async () => {
-  // 将已生成的内容保存
+  // 先中断网络请求，避免流式回调结束时再次 push
+  if (streamAbortController.value) {
+    streamAbortController.value.abort()
+    streamAbortController.value = null
+  }
+
+  // 将已生成的内容保存到 messages 数组
   if (streamingContent.value) {
-    const assistantMsg: ChatMessage = {
+    const assistantMsg: ChatMessageWithRecommend = {
       id: currentStreamingMessageId.value,
       role: 'assistant',
       content: streamingContent.value,
-      timestamp: Math.floor(Date.now() / 1000)
+      timestamp: Math.floor(Date.now() / 1000),
+      recommendation: null
     }
     messages.value.push(assistantMsg)
 
@@ -926,6 +950,7 @@ const handleStopGeneration = async () => {
     }
   }
   
+  // 清除流式状态（这会移除临时占位消息）
   isStreaming.value = false
   streamingContent.value = ''
   currentStreamingMessageId.value = ''
