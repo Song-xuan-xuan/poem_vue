@@ -18,10 +18,12 @@
 
           <el-divider />
 
-          <div 
-            class="poem-content" 
-            @mouseup="handleTextSelection"
-            @touchend="handleTextSelection"
+
+          <div
+            ref="poemContentRef"
+            class="poem-content"
+            @mouseup="handleTextSelection($event)"
+            @touchend="handleTextSelection($event)"
           >
             <p v-for="(para, index) in poemDetail.paragraphs" :key="index" class="poem-line">
               {{ para }}
@@ -52,25 +54,6 @@
           <div class="appreciation-content" v-html="formatAppreciation(poemDetail.appreciation)"></div>
         </el-card>
 
-        <!-- 智能解析 -->
-        <el-card class="analysis-card" shadow="hover">
-          <template #header>
-            <div class="section-header">
-              <el-icon><MagicStick /></el-icon>
-              <span>AI 智能解析</span>
-            </div>
-          </template>
-
-          <el-button
-            type="primary"
-            :loading="parsingLoading"
-            @click="handleIntelligentParse"
-          >
-            <el-icon><MagicStick /></el-icon>
-            解析整首诗词
-          </el-button>
-        </el-card>
-
         <!-- 浮动解析按钮 -->
         <transition name="fade">
           <div
@@ -88,7 +71,7 @@
               @click="handleParseSelectedText"
             >
               <el-icon><MagicStick /></el-icon>
-              AI 解析
+              AI 智能解析
             </el-button>
             <el-button
               size="small"
@@ -134,6 +117,7 @@ const parsingLoading = ref(false)
 const selectedText = ref('')
 const showFloatingButton = ref(false)
 const floatingButtonPosition = ref({ top: 0, left: 0 })
+const poemContentRef = ref<HTMLElement | null>(null)
 
 /**
  * 加载诗词详情
@@ -158,67 +142,81 @@ const loadPoemDetail = async () => {
 }
 
 /**
- * 智能解析 - 跳转到 AI 助手并自动发送
+ * 从事件获取鼠标/手指坐标
  */
-const handleIntelligentParse = async () => {
-  if (!poemDetail.value) return
-
-  parsingLoading.value = true
-  try {
-    // 1. 获取智能解析提示词
-    const res = await getParsePoemPrompt(poemDetail.value.title)
-    const prompt = res.data.prompt
-
-    // 2. 创建新会话
-    const sessionId = crypto.randomUUID()
-    const sessionRes = await createSession({
-      session_id: sessionId,
-      name: `诗词解析 - ${poemDetail.value.title}`
-    })
-
-    // 3. 跳转到 AI 助手页面，并传递会话ID和提示词
-    router.push({
-      path: '/ai',
-      query: {
-        sessionId: sessionRes.data.session_id,
-        autoSend: prompt
-      }
-    })
-
-    ElMessage.success('正在跳转到 AI 助手...')
-  } catch (error: any) {
-    ElMessage.error(error.message || '获取智能解析失败')
-  } finally {
-    parsingLoading.value = false
+const getClientPoint = (e?: MouseEvent | TouchEvent) => {
+  if (!e) return null
+  // Touch
+  if ('changedTouches' in e && e.changedTouches?.length) {
+    const t = e.changedTouches[0]
+    return { x: t.clientX, y: t.clientY }
   }
+  // Mouse
+  if ('clientX' in e) {
+    return { x: e.clientX, y: e.clientY }
+  }
+  return null
 }
 
 /**
  * 处理文本选中事件
  */
-const handleTextSelection = () => {
+const handleTextSelection = (e?: MouseEvent | TouchEvent) => {
   const selection = window.getSelection()
   const text = selection?.toString().trim()
-  
-  if (text && text.length > 0) {
-    selectedText.value = text
-    
-    // 获取选中文本的位置
-    const range = selection?.getRangeAt(0)
-    const rect = range?.getBoundingClientRect()
-    
-    if (rect) {
-      // 计算浮动按钮位置（在选中文字上方居中）
-      floatingButtonPosition.value = {
-        top: rect.top + window.scrollY - 50, // 在选中文字上方 50px
-        left: rect.left + window.scrollX + rect.width / 2 - 60 // 居中对齐，按钮宽度约 120px
-      }
-      showFloatingButton.value = true
+
+  // 1) 没选中文字：隐藏
+  if (!text) {
+    hideFloatingButton()
+    return
+  }
+
+  // 2) 选区必须发生在 poem-content 内（避免别处选中也弹按钮）
+  const poemEl = poemContentRef.value
+  if (poemEl && selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0)
+    const container = range.commonAncestorContainer
+    const containerEl = container.nodeType === 1 ? (container as Element) : container.parentElement
+    if (!containerEl || !poemEl.contains(containerEl)) {
+      hideFloatingButton()
+      return
     }
-  } else {
-    // 没有选中文字，隐藏按钮
-    showFloatingButton.value = false
-    selectedText.value = ''
+  }
+
+  selectedText.value = text
+
+  // 3) 优先用鼠标/手指松开时的位置
+  const p = getClientPoint(e)
+  if (p) {
+    // 让按钮稍微偏移，别压住鼠标与选区
+    const offsetX = 12
+    const offsetY = 12
+
+    // 基于视口定位（配合 position: fixed）
+    let left = p.x + offsetX
+    let top = p.y + offsetY
+
+    // 简单防止出屏（可按你按钮实际大小调整）
+    const margin = 8
+    const approxWidth = 170
+    const approxHeight = 40
+
+    left = Math.min(window.innerWidth - approxWidth - margin, Math.max(margin, left))
+    top = Math.min(window.innerHeight - approxHeight - margin, Math.max(margin, top))
+
+    floatingButtonPosition.value = { top, left }
+    showFloatingButton.value = true
+    return
+  }
+
+  // 4) 兜底：没有事件坐标时，用选区 rect
+  const rect = selection?.getRangeAt(0)?.getBoundingClientRect()
+  if (rect) {
+    floatingButtonPosition.value = {
+      top: rect.top - 10,
+      left: rect.left + rect.width / 2
+    }
+    showFloatingButton.value = true
   }
 }
 
@@ -383,7 +381,6 @@ onBeforeUnmount(() => {
   }
 
   .appreciation-card,
-  .analysis-card,
   .respond-card {
     margin-bottom: 20px;
 
@@ -465,49 +462,57 @@ onBeforeUnmount(() => {
       }
     }
   }
+}
 
-  // 浮动解析按钮
-  .floating-parse-button {
-    position: absolute;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    animation: fadeInUp 0.3s ease;
+// 浮动解析按钮
+.floating-parse-button {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3);
+  border: 1px solid #409eff;
+  animation: fadeInUp 0.3s ease;
 
-    .close-btn {
-      width: 24px;
-      height: 24px;
-      padding: 0;
-      min-height: 24px;
-    }
+  .close-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    min-height: 24px;
   }
 
-  // 淡入淡出动画
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.3s ease;
+  // 添加悬停效果
+  &:hover {
+    box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
   }
+}
 
-  .fade-enter-from,
-  .fade-leave-to {
+// 淡入淡出动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// 浮动按钮出现动画
+@keyframes fadeInUp {
+  from {
     opacity: 0;
+    transform: translateY(10px);
   }
-
-  // 浮动按钮出现动画
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>
