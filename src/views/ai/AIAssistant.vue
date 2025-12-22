@@ -179,7 +179,7 @@
                 @close="clearAgent"
               >
                 <el-icon><MagicStick /></el-icon>
-                热点诗词赏析
+                AI创作发布
               </el-tag>
             </div>
 
@@ -454,18 +454,24 @@ const handleCreateSession = async () => {
 }
 
 /**
- * 选择 AGENT 功能（互斥选择）
+ * 选择 AGENT 功能
+ * - 热点诗词赏析：点击后直接发送固定提示词
+ * - AI创作发布：切换选中状态，等待用户输入
  */
 const selectAgent = (agentType: 'hot-poem' | 'ai-create') => {
-  // 如果点击的是已选中的，则取消选中
-  if (selectedAgent.value === agentType) {
-    selectedAgent.value = null
-  } else {
-    // 否则选中新的（会自动取消之前的选中）
-    selectedAgent.value = agentType
+  if (agentType === 'hot-poem') {
+    // 热点诗词赏析：直接发送固定提示词
+    inputMessage.value = '热点诗词赏析'
+    handleSendMessage()
+    selectedAgent.value = null // 发送后清除选中状态
+  } else if (agentType === 'ai-create') {
+    // AI创作发布：切换选中状态（等待用户输入）
+    if (selectedAgent.value === 'ai-create') {
+      selectedAgent.value = null // 取消选中
+    } else {
+      selectedAgent.value = 'ai-create' // 选中
+    }
   }
-  
-  // TODO: 后续实现具体功能
 }
 
 /**
@@ -479,9 +485,7 @@ const clearAgent = () => {
  * 获取输入框占位符
  */
 const getInputPlaceholder = () => {
-  if (selectedAgent.value === 'hot-poem') {
-    return '请输入您想了解的热点诗词... (Enter 发送)'
-  } else if (selectedAgent.value === 'ai-create') {
+  if (selectedAgent.value === 'ai-create') {
     return '请描述您想创作的诗歌主题和风格... (Enter 发送)'
   }
   return '输入消息... (Enter 发送)'
@@ -597,8 +601,20 @@ const loadMessages = async (sessionId: string) => {
 const handleSendMessage = async () => {
   if (!inputMessage.value.trim() || !currentSessionId.value) return
   
-  const userMessage = inputMessage.value.trim()
-  lastUserQuery.value = userMessage // 记录最后一次问题
+  // 获取用户输入的原始消息（用于显示在UI上）
+  const userDisplayMessage = inputMessage.value.trim()
+  
+  // 根据 selectedAgent 决定实际发送给后端的消息
+  let actualSendMessage = userDisplayMessage
+  
+  if (selectedAgent.value === 'ai-create') {
+    // AI创作发布：静默拼接 #AI创作发布
+    actualSendMessage = `${userDisplayMessage} #AI创作发布`
+    // 发送后清除 Agent 选中状态
+    selectedAgent.value = null
+  }
+  
+  lastUserQuery.value = userDisplayMessage // 记录最后一次问题（用于B站推荐）
   inputMessage.value = ''
   
   // 添加用户消息到列表
@@ -606,7 +622,7 @@ const handleSendMessage = async () => {
   const userMsg: ChatMessageWithRecommend = {
     id: userMsgId,
     role: 'user',
-    content: userMessage,
+    content: userDisplayMessage,
     timestamp: Math.floor(Date.now() / 1000)
   }
   messages.value.push(userMsg)
@@ -625,7 +641,7 @@ const handleSendMessage = async () => {
   
   try {
     await streamDialogWithFetch(
-      userMessage,
+      actualSendMessage,
       currentSessionId.value,
       // onMessage
       async (content: string, isFinal: boolean, fullContent: string) => {
@@ -659,7 +675,7 @@ const handleSendMessage = async () => {
 
           // 独立获取 B站推荐并渲染在回复下方
           try {
-            const recommend = await fetchBilibili(currentSessionId.value, userMessage)
+            const recommend = await fetchBilibili(currentSessionId.value, userDisplayMessage)
             if (recommend.name && recommend.url) {
               const target = messages.value.find(
                 (msg) => msg.id === currentStreamingMessageId.value
