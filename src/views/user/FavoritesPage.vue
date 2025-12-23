@@ -291,26 +291,63 @@ onUnmounted(() => {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
 
   .toolbar {
     display: flex;
     gap: 16px;
     align-items: center;
     margin-bottom: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.05);
 
     .search-input {
       flex: 1;
       max-width: 500px;
+
+      :deep(.el-input__wrapper) {
+        background-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) inset;
+        border-radius: 8px;
+        padding-left: 12px;
+        
+        &.is-focus {
+          box-shadow: 0 0 0 1px #10B981 inset;
+          background-color: #fff;
+        }
+      }
+      
+      :deep(.el-input-group__append) {
+        background-color: #10B981;
+        border: none;
+        box-shadow: none;
+        
+        .el-button {
+          color: white;
+          border: none;
+          
+          &:hover {
+            background: transparent;
+            color: white;
+          }
+        }
+      }
     }
 
     .stats {
-      font-size: 14px;
-      color: #606266;
+      font-size: 15px;
+      color: #047857;
+      font-weight: 500;
 
       .highlight {
-        color: #409eff;
-        font-weight: 600;
-        font-size: 18px;
+        color: #10B981;
+        font-weight: 700;
+        font-size: 20px;
+        margin: 0 4px;
       }
     }
   }
@@ -321,26 +358,34 @@ onUnmounted(() => {
     .favorites-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
+      gap: 24px;
       margin-bottom: 24px;
 
       .favorite-card {
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         height: 280px;
         display: flex;
         flex-direction: column;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.6) 100%);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(16, 185, 129, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        animation: cardFadeIn 0.6s ease-out backwards;
 
         &:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+          transform: translateY(-8px) scale(1.01);
+          box-shadow: 0 16px 32px -8px rgba(16, 185, 129, 0.15);
+          border-color: rgba(16, 185, 129, 0.3);
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 253, 245, 0.8) 100%);
         }
 
         :deep(.el-card__body) {
           flex: 1;
           display: flex;
           flex-direction: column;
-          padding: 20px;
+          padding: 24px;
         }
 
         .card-header {
@@ -348,43 +393,55 @@ onUnmounted(() => {
           justify-content: space-between;
           align-items: flex-start;
           gap: 12px;
-          margin-bottom: 12px;
+          margin-bottom: 16px;
 
           .card-title-section {
             flex: 1;
             min-width: 0;
 
             .card-title {
-              margin: 0 0 8px 0;
               font-size: 18px;
-              font-weight: 600;
-              color: #303133;
+              font-weight: 700;
+              color: #1F2937;
+              margin: 0 0 8px 0;
               overflow: hidden;
               text-overflow: ellipsis;
-              display: -webkit-box;
-              -webkit-line-clamp: 2;
-              line-clamp: 2;
-              -webkit-box-orient: vertical;
-              line-height: 1.4;
+              white-space: nowrap;
+              transition: color 0.3s;
             }
 
             .card-tags {
               display: flex;
               gap: 6px;
-              flex-wrap: wrap;
+              
+              .el-tag {
+                background: transparent;
+                border-color: rgba(16, 185, 129, 0.2);
+                color: #059669;
+                font-family: 'Noto Serif SC', serif;
+              }
+            }
+          }
+          
+          .el-button {
+            color: #9CA3AF;
+            
+            &:hover {
+              color: #EF4444;
+              background: rgba(239, 68, 68, 0.1);
             }
           }
         }
 
         .card-content {
           flex: 1;
-          margin-bottom: 12px;
+          margin-bottom: 16px;
           overflow: hidden;
 
           .content-preview {
-            color: #606266;
-            font-size: 14px;
-            line-height: 1.6;
+            color: #4B5563;
+            font-size: 15px;
+            line-height: 1.8;
             margin: 0;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -392,6 +449,7 @@ onUnmounted(() => {
             -webkit-line-clamp: 3;
             line-clamp: 3;
             -webkit-box-orient: vertical;
+            text-align: justify;
           }
         }
 
@@ -399,8 +457,8 @@ onUnmounted(() => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding-top: 12px;
-          border-top: 1px solid #f0f0f0;
+          padding-top: 16px;
+          border-top: 1px dashed rgba(16, 185, 129, 0.15);
 
           .author-info {
             display: flex;
@@ -409,7 +467,7 @@ onUnmounted(() => {
 
             .author-name {
               font-size: 14px;
-              color: #606266;
+              color: #059669;
               font-weight: 500;
             }
           }
@@ -417,26 +475,34 @@ onUnmounted(() => {
           .card-stats {
             display: flex;
             gap: 12px;
+            color: #9CA3AF;
             font-size: 13px;
-            color: #909399;
-
-            .stat-item,
-            .collect-time {
+            
+            span {
               display: flex;
               align-items: center;
               gap: 4px;
-
-              .el-icon {
-                font-size: 14px;
-              }
-            }
-
-            .collect-time {
-              color: #c0c4cc;
-              font-size: 12px;
             }
           }
         }
+      }
+    }
+    
+    // 列表加载动画延迟
+    @for $i from 1 through 12 {
+      .favorite-card:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.05}s;
+      }
+    }
+
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
 
@@ -451,7 +517,7 @@ onUnmounted(() => {
         align-items: center;
         justify-content: center;
         gap: 8px;
-        color: #409eff;
+        color: #10B981;
 
         .el-icon {
           font-size: 18px;
@@ -500,7 +566,7 @@ onUnmounted(() => {
     .favorites-container {
       .favorites-grid {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 16px;
 
         .favorite-card {
           height: auto;

@@ -42,16 +42,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { StarFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getDailyPoem } from '@/api/poem'
 import type { PoemDetail } from '@/api/type'
+import { useUserStore } from '@/stores/user'
 
 const loading = ref(false)
 const poem = ref<PoemDetail | null>(null)
 const router = useRouter()
+const userStore = useUserStore()
 
 /**
  * 当前日期
@@ -79,11 +81,21 @@ const loadDailyPoem = async () => {
     const res = await getDailyPoem()
     poem.value = res.data // API 直接返回 PoemDetail，无需 .poem
   } catch (error: any) {
-    ElMessage.error(error.message || '加载每日一首失败')
+    // 如果是未登录导致的错误，可能不提示或者提示轻微
+    // 这里保留提示，但用户登录后会自动重试
+    console.error('加载每日一首失败:', error)
+    // ElMessage.error(error.message || '加载每日一首失败') 
   } finally {
     loading.value = false
   }
 }
+
+// 监听登录状态变化，登录成功后重新加载
+watch(() => userStore.accessToken, (newVal) => {
+  if (newVal) {
+    loadDailyPoem()
+  }
+})
 
 onMounted(() => {
   loadDailyPoem()

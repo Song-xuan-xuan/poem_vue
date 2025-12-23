@@ -133,11 +133,22 @@ const goToRegister = () => {
 
 <template>
   <div class="login-view">
+    <!-- 动态背景装饰 -->
+    <div class="bg-decoration">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+      <div class="bamboo-leaf leaf-1"></div>
+      <div class="bamboo-leaf leaf-2"></div>
+    </div>
+
     <el-card class="login-card">
       <template #header>
         <div class="card-header">
-          <h2>用户登录</h2>
-          <p>欢迎回到诗词社区</p>
+          <div class="logo-icon">
+            <el-icon><Reading /></el-icon>
+          </div>
+          <h2>竹林雅集</h2>
+          <p>清风明月本无价，近水远山皆有情</p>
         </div>
       </template>
       
@@ -147,6 +158,7 @@ const goToRegister = () => {
         :rules="rules"
         label-width="0"
         @keyup.enter="handleLogin"
+        class="login-form"
       >
         <el-form-item prop="username">
           <el-input
@@ -180,7 +192,7 @@ const goToRegister = () => {
         <el-form-item>
           <div class="login-options">
             <el-checkbox v-model="loginForm.remember">
-              记住我
+              <span class="remember-text">记住我</span>
             </el-checkbox>
           </div>
         </el-form-item>
@@ -191,9 +203,10 @@ const goToRegister = () => {
             :loading="loading"
             style="width: 100%"
             size="large"
+            class="submit-btn"
             @click="handleLogin"
           >
-            <span v-if="!loading">登录</span>
+            <span v-if="!loading">登 录</span>
             <span v-else>登录中...</span>
           </el-button>
         </el-form-item>
@@ -211,35 +224,134 @@ const goToRegister = () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .login-view {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at 10% 20%, rgb(240, 253, 244) 0%, rgb(209, 250, 229) 90%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Noto Serif SC', serif;
+
+  .bg-decoration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.6;
+      animation: float 10s infinite ease-in-out;
+    }
+
+    .circle-1 {
+      width: 400px;
+      height: 400px;
+      background: rgba(16, 185, 129, 0.2);
+      top: -100px;
+      left: -100px;
+    }
+
+    .circle-2 {
+      width: 300px;
+      height: 300px;
+      background: rgba(5, 150, 105, 0.15);
+      bottom: -50px;
+      right: -50px;
+      animation-delay: -5s;
+    }
+  }
 }
 
 .login-card {
   width: 420px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  :deep(.el-card__header) {
+    border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+    padding: 32px 32px 20px;
+  }
+
+  :deep(.el-card__body) {
+    padding: 32px;
+  }
 }
 
 .card-header {
   text-align: center;
-  padding: 10px 0;
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+    transform: rotate(-5deg);
+  }
+
+  h2 {
+    margin: 0 0 8px 0;
+    color: #064E3B;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+
+  p {
+    margin: 0;
+    color: #059669;
+    font-size: 14px;
+    opacity: 0.8;
+    letter-spacing: 1px;
+  }
 }
 
-.card-header h2 {
-  margin: 0 0 8px 0;
-  color: var(--el-text-color-primary);
-  font-size: 24px;
-}
+.login-form {
+  :deep(.el-input__wrapper) {
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) inset;
+    border-radius: 12px;
+    padding: 4px 15px;
+    transition: all 0.3s;
 
-.card-header p {
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 14px;
+    &.is-focus {
+      background-color: #fff;
+      box-shadow: 0 0 0 1px #10B981 inset !important;
+    }
+  }
+
+  :deep(.el-input__inner) {
+    height: 42px;
+    color: #064E3B;
+  }
+
+  :deep(.el-input__prefix-inner) {
+    color: #10B981;
+  }
 }
 
 .login-options {
@@ -247,12 +359,74 @@ const goToRegister = () => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+
+  .remember-text {
+    color: #059669;
+  }
+  
+  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+    background-color: #10B981;
+    border-color: #10B981;
+  }
+  
+  :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+    color: #10B981;
+  }
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: none;
+  border-radius: 12px;
+  height: 48px;
+  font-size: 16px;
+  letter-spacing: 4px;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    opacity: 0.95;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .register-link {
   width: 100%;
   text-align: center;
-  color: var(--el-text-color-secondary);
+  color: #6B7280;
   font-size: 14px;
+  margin-top: 8px;
+
+  :deep(.el-link) {
+    color: #10B981;
+    font-weight: 500;
+    margin-left: 4px;
+    
+    &:hover {
+      color: #059669;
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20px, -20px); }
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

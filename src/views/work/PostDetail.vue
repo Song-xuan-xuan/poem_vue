@@ -366,9 +366,19 @@ onMounted(() => {
   padding: 20px;
   max-width: 1000px;
   margin: 0 auto;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
 
   .back-btn {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    font-family: 'Noto Serif SC', serif;
+    background: transparent;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #059669;
+    
+    &:hover {
+      background: rgba(16, 185, 129, 0.05);
+      color: #047857;
+    }
   }
 
   .detail-container {
@@ -376,7 +386,16 @@ onMounted(() => {
   }
 
   .post-card {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.05);
+
+    :deep(.el-card__body) {
+      padding: 32px;
+    }
 
     .post-header {
       display: flex;
@@ -386,7 +405,13 @@ onMounted(() => {
       .user-section {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
+
+        :deep(.el-avatar) {
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        }
 
         .user-info {
           .user-name {
@@ -394,64 +419,82 @@ onMounted(() => {
             align-items: center;
             gap: 8px;
             font-weight: 600;
-            color: #303133;
+            color: #047857;
             margin-bottom: 4px;
+            font-size: 16px;
           }
 
           .post-time {
             font-size: 13px;
-            color: #909399;
+            color: #6B7280;
           }
         }
       }
     }
 
+    :deep(.el-divider) {
+      border-top-color: rgba(16, 185, 129, 0.1);
+      margin: 24px 0;
+    }
+
     .post-content {
       .post-title {
         font-size: 28px;
-        font-weight: 600;
-        color: #303133;
-        margin: 0 0 16px 0;
+        font-weight: 700;
+        color: #1F2937;
+        margin: 0 0 20px 0;
         line-height: 1.4;
+        text-align: center;
       }
 
       .post-tags {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        justify-content: center;
+        
+        .el-tag {
+          background: transparent;
+          border-color: rgba(16, 185, 129, 0.2);
+          color: #059669;
+          font-family: 'Noto Serif SC', serif;
+        }
       }
 
       .post-body {
-        font-size: 16px;
-        line-height: 1.8;
-        color: #606266;
+        font-size: 18px;
+        line-height: 2;
+        color: #374151;
         white-space: pre-wrap;
         word-wrap: break-word;
+        padding: 0 20px;
+        text-align: justify;
       }
     }
 
     .post-footer {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid #f0f0f0;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px dashed rgba(16, 185, 129, 0.15);
       display: flex;
       justify-content: space-between;
       align-items: center;
 
       .stats {
         display: flex;
-        gap: 16px;
+        gap: 20px;
 
         .stat-item {
           display: flex;
           align-items: center;
           gap: 6px;
-          color: #606266;
+          color: #6B7280;
           font-size: 14px;
 
           .el-icon {
             font-size: 18px;
+            color: #10B981;
           }
         }
       }
@@ -459,22 +502,100 @@ onMounted(() => {
       .actions {
         display: flex;
         gap: 12px;
+
+        .el-button {
+          font-family: 'Noto Serif SC', serif;
+          
+          &:hover {
+            transform: translateY(-1px);
+          }
+          
+          &.el-button--primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+          }
+          
+          &.el-button--warning {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            border: none;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+          }
+          
+          &.el-button--default {
+            background: transparent;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #059669;
+            
+            &:hover {
+              background: rgba(16, 185, 129, 0.05);
+            }
+          }
+        }
       }
     }
   }
 
   .comment-section {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.6) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+
+    :deep(.el-card__header) {
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+      padding: 20px 24px;
+    }
+
+    :deep(.el-card__body) {
+      padding: 24px;
+    }
+
     .section-header {
       font-size: 18px;
       font-weight: 600;
+      color: #047857;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      &::before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 18px;
+        background: #10B981;
+        border-radius: 2px;
+      }
     }
 
     .comment-form {
-      margin-bottom: 24px;
+      margin-bottom: 32px;
+
+      :deep(.el-textarea__inner) {
+        background-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) inset;
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'Noto Serif SC', serif;
+        
+        &:focus {
+          box-shadow: 0 0 0 1px #10B981 inset;
+          background-color: #fff;
+        }
+      }
 
       .submit-btn {
         margin-top: 12px;
         float: right;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        border: none;
+        font-family: 'Noto Serif SC', serif;
+        
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
       }
 
       &::after {
@@ -487,12 +608,18 @@ onMounted(() => {
     .comment-list {
       .comment-item {
         display: flex;
-        gap: 12px;
-        padding: 16px 0;
-        border-bottom: 1px solid #f0f0f0;
+        gap: 16px;
+        padding: 20px 0;
+        border-bottom: 1px solid rgba(16, 185, 129, 0.1);
 
         &:last-child {
           border-bottom: none;
+        }
+        
+        :deep(.el-avatar) {
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
         .comment-content {
@@ -512,12 +639,13 @@ onMounted(() => {
 
               .user-name {
                 font-weight: 600;
-                color: #303133;
+                color: #047857;
+                font-size: 15px;
               }
 
               .comment-time {
                 font-size: 12px;
-                color: #909399;
+                color: #9CA3AF;
               }
             }
 
@@ -527,9 +655,9 @@ onMounted(() => {
           }
 
           .comment-body {
-            font-size: 14px;
+            font-size: 15px;
             line-height: 1.6;
-            color: #606266;
+            color: #4B5563;
             white-space: pre-wrap;
             word-wrap: break-word;
           }
@@ -556,7 +684,7 @@ onMounted(() => {
         }
 
         .post-body {
-          font-size: 15px;
+          font-size: 16px;
         }
       }
 

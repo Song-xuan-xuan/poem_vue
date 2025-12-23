@@ -103,10 +103,20 @@ const goToLogin = () => {
 
 <template>
   <div class="register-view">
+    <!-- 动态背景装饰 -->
+    <div class="bg-decoration">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+    </div>
+
     <el-card class="register-card">
       <template #header>
         <div class="card-header">
-          <h2>用户注册</h2>
+          <div class="logo-icon">
+            <el-icon><EditPen /></el-icon>
+          </div>
+          <h2>加入雅集</h2>
+          <p>以诗会友，共赏风雅</p>
         </div>
       </template>
       
@@ -114,14 +124,16 @@ const goToLogin = () => {
         ref="registerFormRef"
         :model="registerForm"
         :rules="rules"
-        label-width="90px"
+        label-width="0"
         @keyup.enter="handleRegister"
+        class="register-form"
       >
-        <el-form-item label="账号" prop="username">
+        <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
-            placeholder="6-18位，数字/字母/下划线"
+            placeholder="账号 (6-18位，数字/字母/下划线)"
             clearable
+            size="large"
             maxlength="18"
           >
             <template #prefix>
@@ -130,12 +142,13 @@ const goToLogin = () => {
           </el-input>
         </el-form-item>
         
-        <el-form-item label="密码" prop="password">
+        <el-form-item prop="password">
           <el-input
             v-model="registerForm.password"
             type="password"
-            placeholder="6-18位，数字/字母/下划线"
+            placeholder="密码 (6-18位，数字/字母/下划线)"
             show-password
+            size="large"
             maxlength="18"
           >
             <template #prefix>
@@ -144,28 +157,30 @@ const goToLogin = () => {
           </el-input>
         </el-form-item>
         
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item prop="confirmPassword">
           <el-input
             v-model="registerForm.confirmPassword"
             type="password"
             placeholder="请再次输入密码"
             show-password
+            size="large"
             maxlength="18"
           >
             <template #prefix>
-              <el-icon><Lock /></el-icon>
+              <el-icon><CircleCheck /></el-icon>
             </template>
           </el-input>
         </el-form-item>
         
         <el-form-item>
           <el-alert
-            type="info"
+            type="success"
             :closable="false"
             show-icon
+            class="custom-alert"
           >
             <template #default>
-              <div style="font-size: 12px;">
+              <div class="alert-text">
                 账号和密码只能使用数字、字母、下划线，且长度在6-18位
               </div>
             </template>
@@ -178,9 +193,10 @@ const goToLogin = () => {
             :loading="loading"
             style="width: 100%"
             size="large"
+            class="submit-btn"
             @click="handleRegister"
           >
-            注册
+            注 册
           </el-button>
         </el-form-item>
         
@@ -189,6 +205,7 @@ const goToLogin = () => {
             text
             type="primary"
             style="width: 100%"
+            class="login-link-btn"
             @click="goToLogin"
           >
             已有账号？立即登录
@@ -199,25 +216,196 @@ const goToLogin = () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .register-view {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at 90% 80%, rgb(240, 253, 244) 0%, rgb(209, 250, 229) 90%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Noto Serif SC', serif;
+
+  .bg-decoration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.6;
+      animation: float 12s infinite ease-in-out;
+    }
+
+    .circle-1 {
+      width: 350px;
+      height: 350px;
+      background: rgba(16, 185, 129, 0.15);
+      top: -50px;
+      right: -50px;
+    }
+
+    .circle-2 {
+      width: 250px;
+      height: 250px;
+      background: rgba(5, 150, 105, 0.1);
+      bottom: -20px;
+      left: -20px;
+      animation-delay: -6s;
+    }
+  }
 }
 
 .register-card {
-  width: 400px;
+  width: 420px;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  :deep(.el-card__header) {
+    border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+    padding: 32px 32px 20px;
+  }
+
+  :deep(.el-card__body) {
+    padding: 32px;
+  }
 }
 
 .card-header {
   text-align: center;
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+    transform: rotate(5deg);
+  }
+
+  h2 {
+    margin: 0 0 8px 0;
+    color: #064E3B;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+
+  p {
+    margin: 0;
+    color: #059669;
+    font-size: 14px;
+    opacity: 0.8;
+    letter-spacing: 1px;
+  }
 }
 
-.card-header h2 {
-  margin: 0;
-  color: var(--el-text-color-primary);
+.register-form {
+  :deep(.el-input__wrapper) {
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) inset;
+    border-radius: 12px;
+    padding: 4px 15px;
+    transition: all 0.3s;
+
+    &.is-focus {
+      background-color: #fff;
+      box-shadow: 0 0 0 1px #10B981 inset !important;
+    }
+  }
+
+  :deep(.el-input__inner) {
+    height: 42px;
+    color: #064E3B;
+  }
+
+  :deep(.el-input__prefix-inner) {
+    color: #10B981;
+  }
+}
+
+.custom-alert {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  
+  :deep(.el-alert__icon) {
+    color: #10B981;
+  }
+  
+  .alert-text {
+    font-size: 12px;
+    color: #059669;
+  }
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: none;
+  border-radius: 12px;
+  height: 48px;
+  font-size: 16px;
+  letter-spacing: 4px;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  margin-top: 8px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    opacity: 0.95;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.login-link-btn {
+  color: #6B7280;
+  font-weight: normal;
+  
+  &:hover {
+    color: #10B981;
+    background: transparent;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-20px, 20px); }
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>

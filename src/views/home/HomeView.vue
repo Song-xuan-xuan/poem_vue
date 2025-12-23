@@ -96,12 +96,6 @@ const features = [
         <div class="card-wrapper">
           <DailyPoem />
           <!-- 朱砂印章 -->
-          <div class="seal-mark">
-            <svg viewBox="0 0 100 100" class="seal-svg">
-              <rect x="5" y="5" width="90" height="90" rx="5" fill="none" stroke="#AA3A3A" stroke-width="3" />
-              <text x="50" y="50" font-family="serif" font-size="40" fill="#AA3A3A" text-anchor="middle" dominant-baseline="central">诗境</text>
-            </svg>
-          </div>
         </div>
       </div>
     </section>

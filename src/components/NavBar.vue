@@ -179,7 +179,7 @@ const goToLogin = () => {
   .logo-text {
     font-size: $font-size-xl;
     font-weight: 600;
-    font-family: $font-family-serif; // 衬线体
+    font-family: $font-family-sans; // 使用无衬线体，更具现代感
     white-space: nowrap;
     letter-spacing: 1px;
     transition: all $transition-base;
@@ -232,7 +232,7 @@ const goToLogin = () => {
 
     // 文字样式
     font-size: $font-size-sm;
-    font-family: $font-family-serif; // 衬线体
+    font-family: $font-family-sans; // 使用无衬线体，提升UI易读性
     color: $color-ink-secondary;
     transition: all $transition-slow;
 

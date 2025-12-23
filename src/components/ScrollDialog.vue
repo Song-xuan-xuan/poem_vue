@@ -1,48 +1,78 @@
 <template>
   <Teleport to="body">
     <Transition name="scroll-dialog">
-      <div v-if="visible" class="scroll-dialog-overlay" @click.self="handleClose">
-        <div class="scroll-dialog">
-          <!-- 卷轴上端轴心 -->
-          <div class="scroll-rod scroll-rod-top">
-            <div class="rod-end rod-end-left"></div>
+      <div v-if="visible" class="scroll-dialog-overlay" @click.self="handleOverlayClick">
+        <div class="scroll-dialog-container" :style="{ '--target-width': width }">
+          <!-- 卷轴左侧轴心 -->
+          <div class="scroll-rod scroll-rod-left">
+            <div class="rod-finial rod-finial-top"></div>
             <div class="rod-body"></div>
-            <div class="rod-end rod-end-right"></div>
+            <div class="rod-finial rod-finial-bottom"></div>
           </div>
 
           <!-- 卷轴内容区 -->
-          <div class="scroll-body">
+          <div class="scroll-content">
+            <!-- 背景花纹装饰 (参考图片) -->
+            <div class="floral-bg">
+              <svg width="100%" height="100%" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <pattern id="flower-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <circle cx="20" cy="20" r="2" fill="#E6CBA8" opacity="0.4"/>
+                    <circle cx="30" cy="25" r="1.5" fill="#E6CBA8" opacity="0.3"/>
+                    <circle cx="25" cy="15" r="1.5" fill="#E6CBA8" opacity="0.3"/>
+                    <circle cx="70" cy="60" r="2.5" fill="#E6CBA8" opacity="0.3"/>
+                    <circle cx="80" cy="50" r="1.5" fill="#E6CBA8" opacity="0.2"/>
+                  </pattern>
+                  <radialGradient id="warm-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#FFFDF5" stop-opacity="1" />
+                    <stop offset="100%" stop-color="#F5F0E6" stop-opacity="1" />
+                  </radialGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#warm-glow)" />
+                <rect width="100%" height="100%" fill="url(#flower-pattern)" />
+                
+                <!-- 左下角大花枝装饰 -->
+                <g transform="translate(0, 300) scale(0.8)" opacity="0.15" fill="#8B5E3C">
+                   <path d="M0,100 Q50,50 100,80 T200,60" stroke="#8B5E3C" stroke-width="2" fill="none"/>
+                   <circle cx="50" cy="50" r="5" />
+                   <circle cx="60" cy="40" r="4" />
+                   <circle cx="40" cy="60" r="4" />
+                   <circle cx="100" cy="80" r="6" />
+                   <circle cx="110" cy="70" r="4" />
+                   <circle cx="180" cy="60" r="5" />
+                </g>
+                <!-- 右上角花枝装饰 -->
+                <g transform="translate(300, 0) scale(0.8) rotate(180)" opacity="0.15" fill="#8B5E3C">
+                   <path d="M0,100 Q50,50 100,80 T200,60" stroke="#8B5E3C" stroke-width="2" fill="none"/>
+                   <circle cx="50" cy="50" r="5" />
+                   <circle cx="100" cy="80" r="6" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- 印章装饰 -->
+            <div class="seal-decoration">
+              <span class="seal-text">诗</span>
+            </div>
+
             <!-- 关闭按钮 -->
-            <button class="scroll-close-btn" @click="handleClose">
-              <el-icon><Close /></el-icon>
+            <button class="close-button" @click="handleClose" title="关闭">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
             </button>
-
-            <!-- 卷轴纸张 -->
-            <div class="scroll-paper">
-              <!-- 竹叶装饰 -->
-              <div class="bamboo-decor bamboo-decor-left"></div>
-              <div class="bamboo-decor bamboo-decor-right"></div>
-
-              <!-- 内容插槽 -->
-              <div class="scroll-content">
-                <slot></slot>
-              </div>
-
-              <!-- 印章装饰 -->
-              <div class="seal-stamp">
-                <svg viewBox="0 0 60 60" class="seal-svg">
-                  <rect x="5" y="5" width="50" height="50" rx="3" fill="none" stroke="currentColor" stroke-width="2" />
-                  <text x="30" y="35" font-family="serif" font-size="18" fill="currentColor" text-anchor="middle">诗</text>
-                </svg>
-              </div>
+            
+            <!-- 插槽：放置实际内容 -->
+            <div class="scroll-inner-content">
+              <slot></slot>
             </div>
           </div>
 
-          <!-- 卷轴下端轴心 -->
-          <div class="scroll-rod scroll-rod-bottom">
-            <div class="rod-end rod-end-left"></div>
+          <!-- 卷轴右侧轴心 -->
+          <div class="scroll-rod scroll-rod-right">
+            <div class="rod-finial rod-finial-top"></div>
             <div class="rod-body"></div>
-            <div class="rod-end rod-end-right"></div>
+            <div class="rod-finial rod-finial-bottom"></div>
           </div>
         </div>
       </div>
@@ -51,323 +81,363 @@
 </template>
 
 <script setup lang="ts">
-import { Close } from '@element-plus/icons-vue'
+import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 interface Props {
-  visible: boolean
+  modelValue: boolean
+  width?: string
+  closeOnClickModal?: boolean
+  closeOnPressEscape?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  width: '900px',
+  closeOnClickModal: true,
+  closeOnPressEscape: true
+})
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
-  (e: 'close'): void
+  'update:modelValue': [value: boolean]
+  'close': []
 }>()
 
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
 const handleClose = () => {
-  emit('update:visible', false)
+  visible.value = false
   emit('close')
 }
+
+const handleOverlayClick = () => {
+  if (props.closeOnClickModal) {
+    handleClose()
+  }
+}
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && props.closeOnPressEscape && visible.value) {
+    handleClose()
+  }
+}
+
+// 锁定背景滚动
+watch(visible, (val) => {
+  if (val) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown)
+  document.body.style.overflow = ''
+})
 </script>
 
 <style scoped lang="scss">
-// ==================== 卷轴弹窗遮罩 ====================
+// ==================== 卷轴弹窗遮罩层 ====================
 .scroll-dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
+  z-index: 2000;
+  background: rgba(20, 20, 20, 0.7); // 加深背景，突出卷轴
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  padding: 40px;
+  padding: 20px;
 }
 
-// ==================== 卷轴主体 ====================
-.scroll-dialog {
+// ==================== 卷轴弹窗容器 ====================
+.scroll-dialog-container {
+  position: relative;
+  height: 85vh; // 固定高度
+  display: flex;
+  flex-direction: row; // 水平布局
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  
+  // 初始状态由动画控制
+  width: var(--target-width);
+}
+
+// ==================== 卷轴轴心 (垂直) ====================
+.scroll-rod {
+  width: 42px; // 轴的宽度
+  height: 100%;
   display: flex;
   flex-direction: column;
-  max-width: 900px;
-  width: 100%;
-  max-height: 90vh;
-  animation: scrollUnfold 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  transform-origin: center;
-}
-
-// ==================== 卷轴轴心 ====================
-.scroll-rod {
-  display: flex;
   align-items: center;
-  height: 24px;
   position: relative;
   z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-
+  flex-shrink: 0;
+  
+  // 木质底色 - 垂直纹理
+  background: linear-gradient(
+    90deg,
+    #2c1810 0%,
+    #5d4037 20%,
+    #8d6e63 45%,
+    #5d4037 55%,
+    #3e2723 80%,
+    #1a100c 100%
+  );
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  
   .rod-body {
     flex: 1;
-    height: 16px;
-    background: linear-gradient(
-      to bottom,
-      #5D4037 0%,
-      #8D6E63 20%,
-      #6D4C41 50%,
-      #4E342E 80%,
-      #3E2723 100%
-    );
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-    position: relative;
-
-    // 木纹纹理
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: repeating-linear-gradient(
-        90deg,
-        transparent 0px,
-        rgba(255, 255, 255, 0.03) 1px,
-        transparent 2px,
-        transparent 8px
-      );
-    }
+    width: 100%;
   }
-
-  .rod-end {
-    width: 28px;
-    height: 24px;
-    background: linear-gradient(
-      to bottom,
-      #6D4C41 0%,
-      #5D4037 30%,
-      #4E342E 70%,
-      #3E2723 100%
+  
+  // 轴头 (Finial)
+  .rod-finial {
+    width: 54px; // 比轴身宽
+    height: 36px;
+    background: radial-gradient(
+      circle at 30% 30%,
+      #f4e1c1 0%,
+      #d4af37 50%,
+      #8c7328 100%
     );
     border-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      0 4px 8px rgba(0, 0, 0, 0.4);
     position: relative;
-
-    // 金属装饰圈
-    &::before {
+    z-index: 11;
+    
+    // 装饰凹槽
+    &::after {
       content: '';
       position: absolute;
-      top: 4px;
-      bottom: 4px;
-      width: 4px;
-      background: linear-gradient(
-        to bottom,
-        #B8860B 0%,
-        #DAA520 50%,
-        #B8860B 100%
-      );
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 4px;
+      background: rgba(0,0,0,0.3);
       border-radius: 2px;
     }
-
-    &.rod-end-left::before {
-      right: 4px;
-    }
-
-    &.rod-end-right::before {
-      left: 4px;
-    }
   }
-
-  &.scroll-rod-top {
-    margin-bottom: -4px;
+  
+  .rod-finial-top {
+    margin-bottom: -10px; // 稍微重叠
+    border-radius: 6px 6px 12px 12px;
   }
-
-  &.scroll-rod-bottom {
-    margin-top: -4px;
+  
+  .rod-finial-bottom {
+    margin-top: -10px;
+    border-radius: 12px 12px 6px 6px;
   }
+}
+
+.scroll-rod-left {
+  margin-right: -1px; // 防止缝隙
+}
+
+.scroll-rod-right {
+  margin-left: -1px;
 }
 
 // ==================== 卷轴内容区 ====================
-.scroll-body {
-  position: relative;
+.scroll-content {
   flex: 1;
-  min-height: 0;
+  height: 100%;
+  position: relative;
   overflow: hidden;
+  background-color: #FEFDF5; // 暖白/米黄底色
+  
+  // 左右内阴影，模拟纸张卷曲感
+  box-shadow: 
+    inset 15px 0 20px -10px rgba(0,0,0,0.15),
+    inset -15px 0 20px -10px rgba(0,0,0,0.15);
 }
 
-.scroll-close-btn {
+// ==================== 背景花纹 ====================
+.floral-bg {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 20;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+// ==================== 印章装饰 ====================
+.seal-decoration {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
+  border: 3px solid #8B1A1A; // 深红
+  border-radius: 8px;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-5deg);
+  z-index: 1;
+  mix-blend-mode: multiply; // 正片叠底效果更像印泥
+  
+  .seal-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: #8B1A1A;
+  }
+}
+
+// ==================== 关闭按钮 ====================
+.close-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(4, 120, 87, 0.3);
-  background: rgba(255, 255, 255, 0.9);
-  color: #047857;
+  border: none;
+  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
+  color: #8d6e63;
+  transition: all 0.25s ease;
+  z-index: 20;
+  
   &:hover {
-    background: #047857;
-    color: #fff;
+    color: #3e2723;
     transform: rotate(90deg);
+    background: rgba(0,0,0,0.05);
+    border-radius: 50%;
   }
 }
 
-// ==================== 卷轴纸张 ====================
-.scroll-paper {
+// ==================== 内容滚动区 ====================
+.scroll-inner-content {
   position: relative;
-  background: linear-gradient(
-    135deg,
-    #F8F6F0 0%,
-    #F5F3ED 25%,
-    #F2EDE3 50%,
-    #EFE9DD 75%,
-    #EBE5D8 100%
-  );
-  border-left: 4px solid #047857;
-  border-right: 4px solid #047857;
-  padding: 32px 40px;
-  min-height: 400px;
-  max-height: calc(90vh - 80px);
+  z-index: 2;
+  padding: 40px 60px;
+  height: 100%;
   overflow-y: auto;
-  box-shadow: 
-    inset 0 0 60px rgba(139, 119, 101, 0.1),
-    inset 0 0 20px rgba(139, 119, 101, 0.05);
-
-  // 宣纸纹理
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  // 自定义滚动条
+  
+  // 滚动条样式优化
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
-
+  
   &::-webkit-scrollbar-track {
-    background: rgba(4, 120, 87, 0.05);
-    border-radius: 4px;
+    background: transparent;
   }
-
+  
   &::-webkit-scrollbar-thumb {
-    background: rgba(4, 120, 87, 0.2);
-    border-radius: 4px;
-
+    background: rgba(141, 110, 99, 0.3);
+    border-radius: 3px;
+    
     &:hover {
-      background: rgba(4, 120, 87, 0.3);
+      background: rgba(141, 110, 99, 0.5);
     }
   }
 }
 
-// ==================== 竹叶装饰 ====================
-.bamboo-decor {
-  position: absolute;
-  width: 60px;
-  height: 120px;
-  opacity: 0.06;
-  pointer-events: none;
-  z-index: 1;
+// ==================== 动画定义 ====================
 
-  &.bamboo-decor-left {
-    top: 20px;
-    left: 20px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 120'%3E%3Cpath d='M30 0 Q35 30 25 60 Q35 90 30 120' stroke='%23047857' stroke-width='3' fill='none'/%3E%3Cpath d='M25 20 L10 15 Q5 14 10 12 L25 18' fill='%23047857'/%3E%3Cpath d='M28 50 L45 45 Q50 44 45 42 L28 48' fill='%23047857'/%3E%3Cpath d='M26 85 L12 80 Q7 79 12 77 L26 83' fill='%23047857'/%3E%3C/svg%3E") no-repeat center;
-    background-size: contain;
-  }
-
-  &.bamboo-decor-right {
-    bottom: 20px;
-    right: 20px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 120'%3E%3Cpath d='M30 0 Q25 30 35 60 Q25 90 30 120' stroke='%23047857' stroke-width='3' fill='none'/%3E%3Cpath d='M35 30 L50 25 Q55 24 50 22 L35 28' fill='%23047857'/%3E%3Cpath d='M32 65 L15 60 Q10 59 15 57 L32 63' fill='%23047857'/%3E%3Cpath d='M34 95 L48 90 Q53 89 48 87 L34 93' fill='%23047857'/%3E%3C/svg%3E") no-repeat center;
-    background-size: contain;
-    transform: rotate(180deg);
-  }
-}
-
-// ==================== 印章装饰 ====================
-.seal-stamp {
-  position: absolute;
-  bottom: 40px;
-  right: 50px;
-  width: 50px;
-  height: 50px;
-  color: #9F1239;
-  opacity: 0.7;
-  transform: rotate(-15deg);
-  z-index: 2;
-  filter: drop-shadow(1px 1px 2px rgba(159, 18, 57, 0.2));
-}
-
-// ==================== 内容区 ====================
-.scroll-content {
-  position: relative;
-  z-index: 5;
-}
-
-// ==================== 卷轴展开动画 ====================
-@keyframes scrollUnfold {
-  0% {
-    transform: scaleY(0) rotateX(90deg);
-    opacity: 0;
-  }
-  40% {
-    transform: scaleY(0.3) rotateX(60deg);
-    opacity: 0.5;
-  }
-  70% {
-    transform: scaleY(0.7) rotateX(20deg);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scaleY(1) rotateX(0deg);
-    opacity: 1;
-  }
-}
-
-// ==================== 过渡动画 ====================
+// 1. 遮罩淡入
 .scroll-dialog-enter-active {
-  animation: scrollUnfold 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: overlayFadeIn 0.8s ease-out;
+  
+  .scroll-dialog-container {
+    animation: horizontalUnroll 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+  
+  .scroll-content {
+    // 内容淡入稍微延迟，避免一开始看到被压缩的内容
+    animation: contentFadeIn 0.8s ease-out;
+  }
 }
 
 .scroll-dialog-leave-active {
-  animation: scrollUnfold 0.4s cubic-bezier(0.4, 0, 0.2, 1) reverse forwards;
+  animation: overlayFadeOut 0.5s ease-in;
+  
+  .scroll-dialog-container {
+    animation: horizontalRoll 0.5s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  }
 }
 
-// ==================== 响应式 ====================
-@media (max-width: 768px) {
-  .scroll-dialog-overlay {
-    padding: 20px;
-  }
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-  .scroll-paper {
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+// 核心：水平展开动画
+@keyframes horizontalUnroll {
+  0% {
+    width: 100px; // 初始宽度 = 两个轴的宽度 + 一点点缝隙
+  }
+  100% {
+    width: var(--target-width);
+  }
+}
+
+@keyframes horizontalRoll {
+  0% {
+    width: var(--target-width);
+  }
+  100% {
+    width: 100px;
+  }
+}
+
+@keyframes contentFadeIn {
+  0% { opacity: 0; }
+  30% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+// ==================== 响应式适配 ====================
+@media (max-width: 768px) {
+  .scroll-dialog-container {
+    height: 80vh;
+    width: 95vw !important; // 移动端强制宽度
+    --target-width: 95vw;
+  }
+  
+  .scroll-rod {
+    width: 24px;
+    
+    .rod-finial {
+      width: 30px;
+      height: 24px;
+    }
+  }
+  
+  .scroll-inner-content {
     padding: 24px 20px;
   }
-
-  .bamboo-decor {
-    display: none;
-  }
-
-  .seal-stamp {
+  
+  .seal-decoration {
     width: 40px;
     height: 40px;
-    bottom: 20px;
-    right: 30px;
+    top: 20px;
+    right: 40px;
+    
+    .seal-text {
+      font-size: 20px;
+    }
   }
 }
 </style>

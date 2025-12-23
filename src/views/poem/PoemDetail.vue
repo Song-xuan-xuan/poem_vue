@@ -1,548 +1,312 @@
 <template>
-  <div class="poem-detail">
+  <div class="poem-detail-page">
     <!-- 返回按钮 -->
     <el-button class="back-btn" :icon="ArrowLeft" @click="goBack">返回列表</el-button>
 
-    <div v-loading="loading" class="detail-container">
-      <div v-if="!loading && poemDetail">
-        <!-- 诗词主体内容 -->
-        <el-card class="poem-card" shadow="hover">
-          <div 
-            ref="poemHeaderRef"
-            class="poem-header"
-            @mouseup="handleTextSelection($event)"
-            @touchend="handleTextSelection($event)"
-          >
-            <h1 class="poem-title">{{ poemDetail.title }}</h1>
-            <div class="poem-meta">
-              <span v-if="poemDetail.dynasty" class="dynasty">{{ poemDetail.dynasty }}</span>
-              <span v-if="poemDetail.dynasty" class="divider">·</span>
-              <span class="author">{{ poemDetail.author }}</span>
-            </div>
-          </div>
-
-          <el-divider />
-
-
-          <div
-            ref="poemContentRef"
-            class="poem-content"
-            @mouseup="handleTextSelection($event)"
-            @touchend="handleTextSelection($event)"
-          >
-            <p v-for="(para, index) in poemDetail.paragraphs" :key="index" class="poem-line">
-              {{ para }}
-            </p>
-          </div>
-
-          <div class="poem-tags" v-if="poemDetail.tags && poemDetail.tags.length > 0">
-            <el-tag
-              v-for="tag in poemDetail.tags"
-              :key="tag"
-              type="info"
-              effect="plain"
-              size="large"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-        </el-card>
-
-        <!-- 赏析内容 -->
-        <el-card class="appreciation-card" shadow="hover" v-if="poemDetail.appreciation">
-          <template #header>
-            <div class="section-header">
-              <el-icon><Reading /></el-icon>
-              <span>作品赏析</span>
-            </div>
-          </template>
-          <div class="appreciation-content" v-html="formatAppreciation(poemDetail.appreciation)"></div>
-        </el-card>
-
-        <!-- 浮动解析按钮 -->
-        <transition name="fade">
-          <div
-            v-if="showFloatingButton"
-            class="floating-parse-button"
-            :style="{
-              top: floatingButtonPosition.top + 'px',
-              left: floatingButtonPosition.left + 'px'
-            }"
-          >
-            <el-button
-              type="primary"
-              size="small"
-              :loading="parsingLoading"
-              @click="handleParseSelectedText"
-            >
-              <el-icon><MagicStick /></el-icon>
-              AI 智能解析
-            </el-button>
-            <el-button
-              size="small"
-              circle
-              :icon="Close"
-              @click="hideFloatingButton"
-              class="close-btn"
-            />
-          </div>
-        </transition>
+    <!-- 卷轴容器 (水平布局) -->
+    <div class="scroll-container">
+      <!-- 卷轴左侧轴心 -->
+      <div class="scroll-rod scroll-rod-left">
+        <div class="rod-finial rod-finial-top"></div>
+        <div class="rod-body"></div>
+        <div class="rod-finial rod-finial-bottom"></div>
       </div>
 
-      <el-empty v-else-if="!loading" description="未找到诗词信息" />
+      <!-- 卷轴内容区 -->
+      <div class="scroll-content">
+        <!-- 背景花纹装饰 -->
+        <div class="floral-bg">
+          <svg width="100%" height="100%" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="flower-pattern-page" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                <circle cx="20" cy="20" r="2" fill="#E6CBA8" opacity="0.4"/>
+                <circle cx="30" cy="25" r="1.5" fill="#E6CBA8" opacity="0.3"/>
+                <circle cx="25" cy="15" r="1.5" fill="#E6CBA8" opacity="0.3"/>
+                <circle cx="70" cy="60" r="2.5" fill="#E6CBA8" opacity="0.3"/>
+                <circle cx="80" cy="50" r="1.5" fill="#E6CBA8" opacity="0.2"/>
+              </pattern>
+              <radialGradient id="warm-glow-page" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFFDF5" stop-opacity="1" />
+                <stop offset="100%" stop-color="#F5F0E6" stop-opacity="1" />
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#warm-glow-page)" />
+            <rect width="100%" height="100%" fill="url(#flower-pattern-page)" />
+            
+            <!-- 左下角大花枝装饰 -->
+            <g transform="translate(0, 300) scale(0.8)" opacity="0.15" fill="#8B5E3C">
+                <path d="M0,100 Q50,50 100,80 T200,60" stroke="#8B5E3C" stroke-width="2" fill="none"/>
+                <circle cx="50" cy="50" r="5" />
+                <circle cx="60" cy="40" r="4" />
+                <circle cx="40" cy="60" r="4" />
+                <circle cx="100" cy="80" r="6" />
+                <circle cx="110" cy="70" r="4" />
+                <circle cx="180" cy="60" r="5" />
+            </g>
+            <!-- 右上角花枝装饰 -->
+            <g transform="translate(300, 0) scale(0.8) rotate(180)" opacity="0.15" fill="#8B5E3C">
+                <path d="M0,100 Q50,50 100,80 T200,60" stroke="#8B5E3C" stroke-width="2" fill="none"/>
+                <circle cx="50" cy="50" r="5" />
+                <circle cx="100" cy="80" r="6" />
+            </g>
+          </svg>
+        </div>
+
+        <!-- 印章装饰 -->
+        <div class="seal-decoration">
+          <span class="seal-text">诗</span>
+        </div>
+
+        <!-- 诗词详情内容 -->
+        <div class="scroll-inner-content">
+          <PoemDetailContent :poem-id="poemId" />
+        </div>
+      </div>
+
+      <!-- 卷轴右侧轴心 -->
+      <div class="scroll-rod scroll-rod-right">
+        <div class="rod-finial rod-finial-top"></div>
+        <div class="rod-body"></div>
+        <div class="rod-finial rod-finial-bottom"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import {
-  ArrowLeft,
-  Reading,
-  MagicStick,
-  Close
-} from '@element-plus/icons-vue'
-import type { PoemDetail } from '@/api/type'
-import { getPoemDetail, getParsePoemPrompt } from '@/api/poem'
-import { createSession } from '@/api/session'
+import { ArrowLeft } from '@element-plus/icons-vue'
+import PoemDetailContent from '@/components/PoemDetailContent.vue'
 
 const route = useRoute()
 const router = useRouter()
 
-// 诗词详情
-const loading = ref(false)
-const poemDetail = ref<PoemDetail | null>(null)
-
-// 智能解析
-const parsingLoading = ref(false)
-
-// 文本选中相关
-const selectedText = ref('')
-const showFloatingButton = ref(false)
-const floatingButtonPosition = ref({ top: 0, left: 0 })
-const poemContentRef = ref<HTMLElement | null>(null)
-const poemHeaderRef = ref<HTMLElement | null>(null)
-
-/**
- * 加载诗词详情
- */
-const loadPoemDetail = async () => {
+const poemId = computed(() => {
   const id = route.params.id as string
-  if (!id) {
-    ElMessage.error('诗词ID不能为空')
-    return
-  }
+  return id ? Number(id) : null
+})
 
-  loading.value = true
-  try {
-    const res = await getPoemDetail(Number(id))
-    poemDetail.value = res.data
-  } catch (error: any) {
-    ElMessage.error(error.message || '加载诗词详情失败')
-    poemDetail.value = null
-  } finally {
-    loading.value = false
-  }
-}
-
-/**
- * 从事件获取鼠标/手指坐标
- */
-const getClientPoint = (e?: MouseEvent | TouchEvent) => {
-  if (!e) return null
-  // Touch
-  if ('changedTouches' in e && e.changedTouches?.length) {
-    const t = e.changedTouches[0]
-    return { x: t.clientX, y: t.clientY }
-  }
-  // Mouse
-  if ('clientX' in e) {
-    return { x: e.clientX, y: e.clientY }
-  }
-  return null
-}
-
-/**
- * 处理文本选中事件
- */
-const handleTextSelection = (e?: MouseEvent | TouchEvent) => {
-  const selection = window.getSelection()
-  const text = selection?.toString().trim()
-
-  // 1) 没选中文字：隐藏
-  if (!text) {
-    hideFloatingButton()
-    return
-  }
-
-  // 2) 选区必须发生在 poem-header 或 poem-content 内（避免别处选中也弹按钮）
-  const poemContentEl = poemContentRef.value
-  const poemHeaderEl = poemHeaderRef.value
-  if (selection && selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0)
-    const container = range.commonAncestorContainer
-    const containerEl = container.nodeType === 1 ? (container as Element) : container.parentElement
-    
-    // 检查选区是否在标题或内容区域内
-    const isInHeader = poemHeaderEl && containerEl && poemHeaderEl.contains(containerEl)
-    const isInContent = poemContentEl && containerEl && poemContentEl.contains(containerEl)
-    
-    if (!isInHeader && !isInContent) {
-      hideFloatingButton()
-      return
-    }
-  }
-
-  selectedText.value = text
-
-  // 3) 优先用鼠标/手指松开时的位置
-  const p = getClientPoint(e)
-  if (p) {
-    // 让按钮稍微偏移，别压住鼠标与选区
-    const offsetX = 12
-    const offsetY = 12
-
-    // 基于视口定位（配合 position: fixed）
-    let left = p.x + offsetX
-    let top = p.y + offsetY
-
-    // 简单防止出屏（可按你按钮实际大小调整）
-    const margin = 8
-    const approxWidth = 170
-    const approxHeight = 40
-
-    left = Math.min(window.innerWidth - approxWidth - margin, Math.max(margin, left))
-    top = Math.min(window.innerHeight - approxHeight - margin, Math.max(margin, top))
-
-    floatingButtonPosition.value = { top, left }
-    showFloatingButton.value = true
-    return
-  }
-
-  // 4) 兜底：没有事件坐标时，用选区 rect
-  const rect = selection?.getRangeAt(0)?.getBoundingClientRect()
-  if (rect) {
-    floatingButtonPosition.value = {
-      top: rect.top - 10,
-      left: rect.left + rect.width / 2
-    }
-    showFloatingButton.value = true
-  }
-}
-
-/**
- * 隐藏浮动按钮
- */
-const hideFloatingButton = () => {
-  showFloatingButton.value = false
-  selectedText.value = ''
-}
-
-/**
- * 使用选中的文本进行智能解析
- */
-const handleParseSelectedText = async () => {
-  if (!selectedText.value) return
-  
-  parsingLoading.value = true
-  try {
-    // 1. 获取智能解析提示词（使用选中的文本）
-    const res = await getParsePoemPrompt(selectedText.value)
-    const prompt = res.data.prompt
-
-    // 2. 创建新会话
-    const sessionId = crypto.randomUUID()
-    const sessionRes = await createSession({
-      session_id: sessionId,
-      name: `诗句解析 - ${selectedText.value.substring(0, 10)}...`
-    })
-
-    // 3. 跳转到 AI 助手页面，并传递会话ID和提示词
-    router.push({
-      path: '/ai',
-      query: {
-        sessionId: sessionRes.data.session_id,
-        autoSend: prompt
-      }
-    })
-
-    ElMessage.success('正在跳转到 AI 助手...')
-    
-    // 隐藏浮动按钮
-    hideFloatingButton()
-  } catch (error: any) {
-    ElMessage.error(error.message || '获取智能解析失败')
-  } finally {
-    parsingLoading.value = false
-  }
-}
-
-/**
- * 格式化赏析内容
- */
-const formatAppreciation = (text: string) => {
-  // 简单的段落处理
-  return text
-    .split('\n')
-    .filter((para) => para.trim())
-    .map((para) => `<p>${para}</p>`)
-    .join('')
-}
-
-/**
- * 返回列表
- */
 const goBack = () => {
   router.back()
 }
-
-onMounted(() => {
-  loadPoemDetail()
-  
-  // 点击页面其他区域时隐藏浮动按钮
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement
-    // 如果点击的不是浮动按钮、标题区域或内容区域，则隐藏
-    if (
-      !target.closest('.floating-parse-button') && 
-      !target.closest('.poem-header') && 
-      !target.closest('.poem-content')
-    ) {
-      hideFloatingButton()
-    }
-  })
-})
-
-onBeforeUnmount(() => {
-  // 清理事件监听器
-  document.removeEventListener('click', hideFloatingButton)
-})
 </script>
 
 <style scoped lang="scss">
-.poem-detail {
+.poem-detail-page {
   padding: 20px;
-  max-width: 1000px;
+  max-width: 1200px; // 增加宽度以适应横向卷轴
   margin: 0 auto;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
 
   .back-btn {
-    margin-bottom: 16px;
-  }
-
-  .detail-container {
-    min-height: 400px;
-  }
-
-  .poem-card {
     margin-bottom: 20px;
-    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-
-    .poem-header {
-      text-align: center;
-      padding: 20px 0;
-      user-select: text; // 允许文本选择
-      cursor: text; // 鼠标样式改为文本选择
-
-      .poem-title {
-        font-size: 32px;
-        margin: 0 0 16px 0;
-        color: #303133;
-        font-weight: 600;
-        
-        // 选中文本的高亮样式
-        &::selection {
-          background: #409eff;
-          color: #fff;
-        }
-      }
-
-      .poem-meta {
-        font-size: 16px;
-        color: #606266;
-
-        .divider {
-          margin: 0 8px;
-        }
-
-        .dynasty,
-        .author {
-          font-weight: 500;
-          
-          // 选中文本的高亮样式
-          &::selection {
-            background: #409eff;
-            color: #fff;
-          }
-        }
-      }
-    }
-
-    .poem-content {
-      padding: 30px 0;
-      text-align: center;
-      line-height: 2.5;
-      user-select: text; // 允许文本选择
-      cursor: text; // 鼠标样式改为文本选择
-
-      .poem-line {
-        font-size: 20px;
-        color: #303133;
-        margin: 12px 0;
-        font-weight: 400;
-        letter-spacing: 2px;
-        
-        // 选中文本的高亮样式
-        &::selection {
-          background: #409eff;
-          color: #fff;
-        }
-      }
-    }
-
-    .poem-tags {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding-top: 20px;
-    }
-  }
-
-  .appreciation-card,
-  .respond-card {
-    margin-bottom: 20px;
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 18px;
-      font-weight: 600;
-
-      .el-icon {
-        font-size: 20px;
-      }
-    }
-
-    .appreciation-content {
-      line-height: 2;
-      color: #606266;
-      font-size: 15px;
-
-      :deep(p) {
-        margin: 12px 0;
-        text-indent: 2em;
-      }
-    }
-
-    .respond-result {
-      margin-top: 20px;
-
-      .result-content {
-        line-height: 1.8;
-
-        p {
-          margin: 8px 0;
-        }
-
-        .respond-text {
-          color: #303133;
-          font-size: 16px;
-          font-weight: 500;
-          padding: 12px;
-          background: #f5f7fa;
-          border-radius: 4px;
-          margin: 12px 0;
-        }
-
-        .ai-response {
-          color: #606266;
-          padding: 12px;
-          background: #ecf5ff;
-          border-radius: 4px;
-          margin: 12px 0;
-        }
-      }
-    }
+    align-self: flex-start;
+    font-family: 'Noto Serif SC', serif;
   }
 }
 
-@media (max-width: 768px) {
-  .poem-detail {
-    padding: 12px;
+// ==================== 卷轴容器 ====================
+.scroll-container {
+  flex: 1;
+  display: flex;
+  flex-direction: row; // 水平布局
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  min-height: 600px;
+  
+  // 页面加载时的展开动画
+  animation: pageScrollUnroll 1s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: center;
+}
 
-    .poem-card {
-      .poem-header {
-        .poem-title {
-          font-size: 24px;
-        }
-
-        .poem-meta {
-          font-size: 14px;
-        }
-      }
-
-      .poem-content {
-        .poem-line {
-          font-size: 16px;
-          letter-spacing: 1px;
-        }
-      }
+// ==================== 卷轴轴心 (垂直) ====================
+.scroll-rod {
+  width: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  
+  background: linear-gradient(
+    90deg,
+    #2c1810 0%,
+    #5d4037 20%,
+    #8d6e63 45%,
+    #5d4037 55%,
+    #3e2723 80%,
+    #1a100c 100%
+  );
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  
+  .rod-body {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .rod-finial {
+    width: 54px;
+    height: 36px;
+    background: radial-gradient(
+      circle at 30% 30%,
+      #f4e1c1 0%,
+      #d4af37 50%,
+      #8c7328 100%
+    );
+    border-radius: 4px;
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      0 4px 8px rgba(0, 0, 0, 0.4);
+    position: relative;
+    z-index: 11;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 4px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 2px;
     }
+  }
+  
+  .rod-finial-top {
+    margin-bottom: -10px;
+    border-radius: 6px 6px 12px 12px;
+  }
+  
+  .rod-finial-bottom {
+    margin-top: -10px;
+    border-radius: 12px 12px 6px 6px;
   }
 }
 
-// 浮动解析按钮
-.floating-parse-button {
-  position: fixed;
-  z-index: 1000;
+.scroll-rod-left {
+  margin-right: -1px;
+}
+
+.scroll-rod-right {
+  margin-left: -1px;
+}
+
+// ==================== 卷轴内容区 ====================
+.scroll-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #FEFDF5;
+  
+  box-shadow: 
+    inset 15px 0 20px -10px rgba(0,0,0,0.15),
+    inset -15px 0 20px -10px rgba(0,0,0,0.15);
+}
+
+// ==================== 背景花纹 ====================
+.floral-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+// ==================== 印章装饰 ====================
+.seal-decoration {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
+  border: 3px solid #8B1A1A;
+  border-radius: 8px;
+  opacity: 0.7;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3);
-  border: 1px solid #409eff;
-  animation: fadeInUp 0.3s ease;
-
-  .close-btn {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    min-height: 24px;
-  }
-
-  // 添加悬停效果
-  &:hover {
-    box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
+  justify-content: center;
+  transform: rotate(-5deg);
+  z-index: 1;
+  mix-blend-mode: multiply;
+  
+  .seal-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: #8B1A1A;
   }
 }
 
-// 淡入淡出动画
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+// ==================== 内容滚动区 ====================
+.scroll-inner-content {
+  position: relative;
+  z-index: 2;
+  padding: 40px 60px;
+  height: 100%;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(141, 110, 99, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(141, 110, 99, 0.5);
+    }
+  }
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-// 浮动按钮出现动画
-@keyframes fadeInUp {
-  from {
+// ==================== 展开动画 ====================
+@keyframes pageScrollUnroll {
+  0% {
+    clip-path: inset(0 50% 0 50%);
     opacity: 0;
-    transform: translateY(10px);
   }
-  to {
+  100% {
+    clip-path: inset(0 0 0 0);
     opacity: 1;
-    transform: translateY(0);
+  }
+}
+
+// ==================== 响应式适配 ====================
+@media (max-width: 768px) {
+  .poem-detail-page {
+    padding: 12px;
+  }
+  
+  .scroll-rod {
+    width: 24px;
+    
+    .rod-finial {
+      width: 30px;
+      height: 24px;
+    }
+  }
+  
+  .scroll-inner-content {
+    padding: 24px 16px;
+  }
+  
+  .seal-decoration {
+    width: 40px;
+    height: 40px;
+    top: 16px;
+    right: 16px;
+    
+    .seal-text {
+      font-size: 20px;
+    }
   }
 }
 </style>

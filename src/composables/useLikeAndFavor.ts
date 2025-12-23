@@ -80,13 +80,13 @@ export function useLikeAndFavor() {
         if (currentStatus === 1) {
           // 已点赞 -> 取消点赞
           const res = await cancelLikePostAPI(postId)
-          ElMessage.success('已取消点赞')
+          // ElMessage.success('已取消点赞')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.like_status, res.data.like_count)
         } else {
           // 未点赞 -> 点赞
           const res = await likePostAPI(postId)
-          ElMessage.success('点赞成功')
+          // ElMessage.success('点赞成功')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.like_status, res.data.like_count)
         }
@@ -145,13 +145,13 @@ export function useLikeAndFavor() {
         if (currentStatus === 1) {
           // 已收藏 -> 取消收藏
           const res = await cancelCollectPostAPI(postId)
-          ElMessage.success('已取消收藏')
+          // ElMessage.success('已取消收藏')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.collect_status, res.data.collect_count)
         } else {
           // 未收藏 -> 收藏
           const res = await collectPostAPI(postId)
-          ElMessage.success('收藏成功')
+          // ElMessage.success('收藏成功')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.collect_status, res.data.collect_count)
         }

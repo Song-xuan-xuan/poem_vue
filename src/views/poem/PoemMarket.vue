@@ -73,8 +73,24 @@
                 shadow="hover"
                 @click="goToDetail(poem.id)"
               >
+                <!-- 装饰背景：竹影 -->
+                <div class="card-bg-pattern">
+                  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M120,200 Q150,100 100,0" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.3" />
+                    <path d="M140,180 Q160,120 130,40" stroke="currentColor" stroke-width="1" fill="none" opacity="0.2" />
+                    <path d="M120,60 Q150,70 160,50" fill="currentColor" opacity="0.2" />
+                    <path d="M110,120 Q140,130 150,110" fill="currentColor" opacity="0.2" />
+                    <path d="M130,160 Q160,170 170,150" fill="currentColor" opacity="0.15" />
+                  </svg>
+                </div>
+                <!-- 装饰：角落回纹 -->
+                <div class="card-corner-decoration"></div>
+
                 <h3 class="poem-title">{{ poem.title }}</h3>
-                <p class="poem-author">{{ poem.author }}</p>
+                <p class="poem-author">
+                  <span class="author-name">{{ poem.author }}</span>
+  
+                </p>
                 <div class="poem-preview">
                   {{ poem.part_content }}
                 </div>
@@ -83,7 +99,7 @@
                     v-for="tag in poem.tags.slice(0, 3)"
                     :key="tag"
                     size="small"
-                    type="info"
+                    class="custom-tag"
                     effect="plain"
                   >
                     {{ tag }}
@@ -114,18 +130,29 @@
         <PoemRespond />
       </div>
     </div>
+
+    <!-- 卷轴弹窗 -->
+    <ScrollDialog v-model="dialogVisible" width="900px">
+      <PoemDetailContent 
+        v-if="selectedPoemId" 
+        :poem-id="selectedPoemId" 
+      />
+    </ScrollDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { Search, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { usePoemSearch } from '@/composables/usePoemSearch'
 import PoemRespond from '@/components/PoemRespond.vue'
+import ScrollDialog from '@/components/ScrollDialog.vue'
+import PoemDetailContent from '@/components/PoemDetailContent.vue'
 
-const router = useRouter()
+// 卷轴弹窗状态
+const dialogVisible = ref(false)
+const selectedPoemId = ref<number | null>(null)
 
 // 标签分类数据
 const tagCategories = ref<Record<string, string[]>>({
@@ -268,10 +295,11 @@ const handleScroll = () => {
 }
 
 /**
- * 跳转到详情页
+ * 打开卷轴弹窗展示诗词详情
  */
 const goToDetail = (id: number) => {
-  router.push(`/poem/detail/${id}`)
+  selectedPoemId.value = id
+  dialogVisible.value = true
 }
 
 
@@ -294,44 +322,152 @@ onUnmounted(() => {
   margin: 0 auto;
 
   .search-card {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 8px 24px -8px rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    :deep(.el-card__body) {
+      padding: 24px 32px;
+    }
 
     .search-section {
       .search-bar {
-        margin-bottom: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: center;
 
         .search-input {
           width: 100%;
           max-width: 800px;
+
+          // 输入框样式重写
+          :deep(.el-input-group__prepend) {
+            background-color: rgba(255, 255, 255, 0.6);
+            box-shadow: none;
+            border-right: 1px solid rgba(16, 185, 129, 0.1);
+            padding: 0 20px;
+            
+            .el-select .el-input__wrapper {
+              box-shadow: none !important;
+              background: transparent;
+              padding: 0;
+            }
+            
+            .el-input__inner {
+              color: #047857;
+              font-weight: 500;
+            }
+          }
+          
+          :deep(.el-input__wrapper) {
+            background-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) inset;
+            padding-left: 16px;
+            
+            &.is-focus {
+              box-shadow: 0 0 0 1px #10B981 inset;
+              background-color: #fff;
+            }
+
+            .el-input__inner {
+              height: 44px;
+              color: #1F2937;
+            }
+          }
+          
+          :deep(.el-input-group__append) {
+            background-color: #10B981;
+            border: none;
+            box-shadow: none;
+            padding: 0 24px;
+            transition: all 0.3s;
+            
+            &:hover {
+              background-color: #059669;
+            }
+            
+            .el-button {
+              color: white;
+              border: none;
+              margin: 0;
+              padding: 12px 0;
+              
+              &:hover {
+                color: white;
+                background: transparent;
+              }
+            }
+          }
         }
       }
 
       .tag-filter {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
+        padding-top: 20px;
+        border-top: 1px dashed rgba(16, 185, 129, 0.2);
 
         .filter-label {
-          font-size: 14px;
-          color: #606266;
-          font-weight: 500;
+          font-size: 15px;
+          color: #047857;
+          font-weight: 600;
+          font-family: 'Noto Serif SC', serif;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          
+          &::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 16px;
+            background: #10B981;
+            border-radius: 2px;
+          }
         }
 
         .tag-selects {
           display: flex;
           flex-wrap: wrap;
-          gap: 12px;
+          gap: 16px;
           width: 100%;
 
           .category-select {
             flex: 1;
-            min-width: 180px;
-            max-width: 250px;
+            min-width: 160px;
+            max-width: 220px;
+            
+            :deep(.el-input__wrapper) {
+              background-color: rgba(255, 255, 255, 0.5);
+              box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.15) inset;
+              border-radius: 8px;
+              padding: 4px 12px;
+              
+              &.is-focus {
+                box-shadow: 0 0 0 1px #10B981 inset !important;
+                background-color: #fff;
+              }
+            }
           }
         }
 
         .el-button {
           align-self: flex-start;
+          font-family: 'Noto Serif SC', serif;
+          font-weight: 500;
+          
+          &:hover {
+            color: #047857;
+          }
         }
       }
     }
@@ -358,65 +494,183 @@ onUnmounted(() => {
     margin-bottom: 20px;
 
     .poem-card {
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       cursor: pointer;
       height: 280px;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.3s;
+      position: relative;
+      border: 1px solid rgba(16, 185, 129, 0.1);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 253, 244, 0.6) 100%);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: cardFadeIn 0.6s ease-out backwards;
 
-      &:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      }
-
+      // 覆盖 el-card 默认样式
       :deep(.el-card__body) {
-        flex: 1;
+        height: 100%;
+        padding: 24px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        z-index: 2;
+        background: transparent;
+        overflow: hidden; // 防止内容溢出导致滚动条
+      }
+
+      // 悬停效果
+      &:hover {
+        transform: translateY(-8px) scale(1.01);
+        box-shadow: 0 16px 32px -8px rgba(16, 185, 129, 0.15);
+        border-color: rgba(16, 185, 129, 0.3);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 253, 245, 0.8) 100%);
+
+        .card-bg-pattern {
+          opacity: 0.2;
+          transform: scale(1.1) rotate(2deg);
+          color: #059669;
+        }
+
+        .card-corner-decoration {
+          border-color: rgba(16, 185, 129, 0.4);
+          &::before {
+            border-color: rgba(16, 185, 129, 0.4);
+          }
+        }
+
+        .poem-title {
+          color: #047857;
+        }
+      }
+
+      // 装饰：竹影背景
+      .card-bg-pattern {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 160px;
+        height: 160px;
+        color: #10B981;
+        opacity: 0.08;
+        transition: all 0.6s ease;
+        z-index: 0;
+        pointer-events: none;
+        
+        svg {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      // 装饰：角落回纹
+      .card-corner-decoration {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        width: 24px;
+        height: 24px;
+        border-bottom: 2px solid rgba(16, 185, 129, 0.15);
+        border-right: 2px solid rgba(16, 185, 129, 0.15);
+        z-index: 1;
+        transition: all 0.3s ease;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          right: 4px;
+          width: 12px;
+          height: 12px;
+          border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+          border-right: 1px solid rgba(16, 185, 129, 0.15);
+          transition: all 0.3s ease;
+        }
       }
 
       .poem-title {
-        font-size: 18px;
-        margin: 0 0 8px 0;
-        font-weight: 600;
-        color: #303133;
+        font-size: 20px;
+        margin: 0 0 12px 0;
+        font-weight: 700;
+        color: #1F2937;
+        font-family: 'Noto Serif SC', 'Songti SC', serif;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        transition: color 0.3s ease;
       }
 
       .poem-author {
-        font-size: 13px;
-        color: #909399;
-        margin-bottom: 12px;
+        font-size: 14px;
+        color: #6B7280;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .author-name {
+          font-weight: 500;
+        }
+
+        .dynasty-badge {
+          font-size: 12px;
+          padding: 1px 6px;
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+          border-radius: 4px;
+          font-family: 'Noto Serif SC', serif;
+        }
       }
 
       .poem-preview {
         flex: 1;
         line-height: 1.8;
-        color: #606266;
+        color: #4B5563;
+        font-family: 'Noto Serif SC', serif;
+        font-size: 15px;
         overflow: hidden;
-
-        p {
-          margin: 4px 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .more-text {
-          color: #909399;
-          font-style: italic;
-        }
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        -webkit-box-orient: vertical;
+        margin-bottom: 12px;
+        text-align: justify;
       }
 
       .poem-footer {
-        margin-top: 12px;
+        margin-top: auto;
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+
+        .custom-tag {
+          background: transparent;
+          border-color: rgba(16, 185, 129, 0.2);
+          color: #059669;
+          font-family: 'Noto Serif SC', serif;
+          
+          &:hover {
+            background: rgba(16, 185, 129, 0.05);
+          }
+        }
       }
+    }
+  }
+
+  // 列表加载动画延迟
+  @for $i from 1 through 12 {
+    .el-col:nth-child(#{$i}) .poem-card {
+      animation-delay: #{$i * 0.08}s;
+    }
+  }
+
+  @keyframes cardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
