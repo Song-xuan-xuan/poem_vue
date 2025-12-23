@@ -153,8 +153,8 @@ const goToLogin = () => {
   transition: all $transition-slow;
   position: relative;
 
-  // 竹青色主题
-  color: $color-bamboo-primary;
+  // 墨色主题
+  color: $color-ink-primary;
 
   // 光晕效果
   &::before {
@@ -165,7 +165,7 @@ const goToLogin = () => {
     transform: translate(-50%, -50%);
     width: 0;
     height: 0;
-    background: radial-gradient(circle, rgba(107, 144, 128, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(30, 41, 59, 0.05) 0%, transparent 70%);
     border-radius: 50%;
     transition: all $transition-slow;
     z-index: -1;
@@ -179,7 +179,7 @@ const goToLogin = () => {
   .logo-text {
     font-size: $font-size-xl;
     font-weight: 600;
-    font-family: $font-family-chinese;
+    font-family: $font-family-serif; // 衬线体
     white-space: nowrap;
     letter-spacing: 1px;
     transition: all $transition-base;
@@ -192,7 +192,7 @@ const goToLogin = () => {
 
   &:hover {
     transform: scale(1.05);
-    color: $color-bamboo-dark;
+    color: $color-ink-dark;
 
     &::before {
       width: 120%;
@@ -227,13 +227,13 @@ const goToLogin = () => {
     line-height: 40px;
     padding: 0 $spacing-md;
     margin: 0 $spacing-xs;
-    border-radius: $radius-md;
+    border-radius: $radius-sm; // 方一点
     overflow: hidden;
 
     // 文字样式
     font-size: $font-size-sm;
-    font-family: $font-family-chinese;
-    color: $color-ink-gray;
+    font-family: $font-family-serif; // 衬线体
+    color: $color-ink-secondary;
     transition: all $transition-slow;
 
     // 去除默认边框
@@ -247,11 +247,11 @@ const goToLogin = () => {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(107, 144, 128, 0.08);
+      background: rgba(30, 41, 59, 0.05);
       opacity: 0;
       transform: scale(0.8);
       transition: all $transition-slow cubic-bezier(0.34, 1.56, 0.64, 1);
-      border-radius: $radius-md;
+      border-radius: $radius-sm;
       z-index: -1;
     }
 
@@ -262,9 +262,9 @@ const goToLogin = () => {
       transition: transform $transition-base;
     }
 
-    // Hover 状态：轻微背景 + 竹青色文字 + 图标微动
+    // Hover 状态：轻微背景 + 墨色文字 + 图标微动
     &:hover {
-      color: $color-bamboo-primary;
+      color: $color-ink-primary;
       transform: translateY(-1px);
 
       &::before {
@@ -277,12 +277,12 @@ const goToLogin = () => {
       }
     }
 
-    // 激活状态：竹青色背景 + 白色文字 + 轻微阴影
+    // 激活状态：墨色背景 + 白色文字 + 轻微阴影
     &.is-active {
-      background: linear-gradient(135deg, $color-bamboo-primary 0%, $color-bamboo-light 100%);
-      color: #fff;
+      background: $color-ink-primary;
+      color: #f8fafc;
       font-weight: 500;
-      box-shadow: 0 2px 8px rgba(107, 144, 128, 0.25);
+      box-shadow: $shadow-ink-sm;
       transform: translateY(-1px);
 
       &::before {

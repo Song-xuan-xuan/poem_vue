@@ -94,78 +94,22 @@ onMounted(() => {
 // ==================== 每日一首卡片 ====================
 .daily-poem-card {
   position: relative;
-  // 半透明背景 + 毛玻璃效果
-  background: $gradient-card-bg;
-  backdrop-filter: $blur-md;
-  -webkit-backdrop-filter: $blur-md;
-  border: 1px solid rgba(90, 140, 111, 0.15);
-  border-radius: $radius-2xl;
-  overflow: hidden;
-  box-shadow: $shadow-lg;
-  transition: all $transition-base;
-
-  // 竹叶装饰（左下角）
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 120px;
-    height: 120px;
-    background:
-      radial-gradient(ellipse 60px 20px at 20% 80%, rgba(90, 140, 111, 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 50px 18px at 30% 85%, rgba(90, 140, 111, 0.1) 0%, transparent 60%),
-      radial-gradient(ellipse 55px 19px at 25% 90%, rgba(90, 140, 111, 0.11) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  // 竹叶装饰（右上角）
-  &::after {
-    content: '';
-    position: absolute;
-    top: 60px;
-    right: 0;
-    width: 100px;
-    height: 100px;
-    background:
-      radial-gradient(ellipse 55px 18px at 80% 20%, rgba(90, 140, 111, 0.1) 0%, transparent 60%),
-      radial-gradient(ellipse 48px 16px at 75% 25%, rgba(90, 140, 111, 0.09) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: $shadow-glass;
-    border-color: rgba(90, 140, 111, 0.25);
-  }
+  // 移除默认背景和边框，由外层容器控制
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible; // 允许印章溢出
 
   // 覆盖 Element Plus 卡片样式
   :deep(.el-card__header) {
-    // 竹青渐变背景
-    background: linear-gradient(135deg, $color-bamboo-primary 0%, $color-bamboo-light 100%);
-    color: #fff;
-    border: none;
-    padding: $spacing-md $spacing-lg;
-    position: relative;
-    overflow: hidden;
-
-    // 添加竹叶装饰纹理
-    &::before {
-      content: '';
-      position: absolute;
-      top: -20px;
-      right: -20px;
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-      border-radius: 50%;
-    }
+    background: transparent;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2); // 浅墨色分割线
+    padding: $spacing-md 0;
+    margin: 0 $spacing-lg;
   }
 
   :deep(.el-card__body) {
-    padding: $spacing-xl;
+    padding: $spacing-xl $spacing-lg;
     background: transparent;
   }
 
@@ -183,19 +127,19 @@ onMounted(() => {
       gap: $spacing-sm;
       font-size: $font-size-base;
       font-weight: 600;
-      font-family: $font-family-chinese;
+      font-family: $font-family-serif;
+      color: $color-ink-primary;
 
       .el-icon {
-        color: $color-accent-gold;
+        color: $color-seal-red; // 朱砂红
         font-size: $font-size-lg;
-        animation: twinkle 2s ease-in-out infinite;
       }
     }
 
     .header-date {
-      font-size: $font-size-xs;
-      opacity: 0.9;
-      font-family: $font-family-chinese;
+      font-size: $font-size-sm;
+      color: $color-ink-secondary;
+      font-family: $font-family-serif;
     }
   }
 
@@ -216,19 +160,19 @@ onMounted(() => {
       font-size: $font-size-2xl;
       margin: 0 0 $spacing-sm 0;
       font-weight: 600;
-      color: $color-ink-black;
+      color: $color-ink-primary;
       text-align: center;
-      font-family: $font-family-poem;
+      font-family: $font-family-serif;
       letter-spacing: 2px;
       transition: color $transition-base;
     }
 
     .poem-author {
       font-size: $font-size-sm;
-      color: $color-ink-gray;
+      color: $color-ink-secondary;
       text-align: center;
       margin-bottom: $spacing-lg;
-      font-family: $font-family-chinese;
+      font-family: $font-family-serif;
 
       &::before {
         content: '—— ';
@@ -237,12 +181,12 @@ onMounted(() => {
 
     .poem-paragraphs {
       line-height: $line-height-loose;
-      font-size: $font-size-base;
+      font-size: $font-size-lg;
       margin-bottom: $spacing-lg;
-      color: $color-ink-black;
+      color: $color-ink-primary;
       max-height: 280px;
       overflow-y: auto;
-      font-family: $font-family-poem;
+      font-family: $font-family-serif;
 
       // 自定义滚动条
       &::-webkit-scrollbar {
@@ -250,16 +194,16 @@ onMounted(() => {
       }
 
       &::-webkit-scrollbar-track {
-        background: rgba(90, 140, 111, 0.05);
+        background: rgba(30, 41, 59, 0.05);
         border-radius: $radius-sm;
       }
 
       &::-webkit-scrollbar-thumb {
-        background: rgba(90, 140, 111, 0.3);
+        background: rgba(30, 41, 59, 0.2);
         border-radius: $radius-sm;
 
         &:hover {
-          background: rgba(90, 140, 111, 0.5);
+          background: rgba(30, 41, 59, 0.4);
         }
       }
 
@@ -267,8 +211,6 @@ onMounted(() => {
         margin: $spacing-md 0;
         text-align: center;
         letter-spacing: 1px;
-
-        // 移除首行缩进，改为居中对齐
         text-indent: 0;
       }
     }
@@ -280,18 +222,19 @@ onMounted(() => {
       justify-content: center;
 
       :deep(.el-tag) {
-        background: rgba(90, 140, 111, 0.1);
-        border: 1px solid rgba(90, 140, 111, 0.2);
-        color: $color-bamboo-primary;
-        border-radius: $radius-md;
+        background: transparent;
+        border: 1px solid $color-ink-light;
+        color: $color-ink-secondary;
+        border-radius: $radius-sm;
         font-size: $font-size-xs;
-        font-family: $font-family-chinese;
+        font-family: $font-family-serif;
         padding: $spacing-xs $spacing-sm;
         transition: all $transition-fast;
 
         &:hover {
-          background: rgba(90, 140, 111, 0.15);
-          border-color: rgba(90, 140, 111, 0.3);
+          background: rgba(30, 41, 59, 0.05);
+          border-color: $color-ink-secondary;
+          color: $color-ink-primary;
           transform: scale(1.05);
         }
       }
@@ -323,7 +266,7 @@ onMounted(() => {
 
 // Loading 状态
 :deep(.el-loading-mask) {
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(240, 242, 240, 0.8); // 适配灰白玉背景
   backdrop-filter: $blur-sm;
 }
 </style>

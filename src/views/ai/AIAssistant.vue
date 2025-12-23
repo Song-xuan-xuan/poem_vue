@@ -1072,25 +1072,31 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .ai-assistant {
   display: flex;
   height: 100%;
-  gap: 0;
-  background: #f5f7fa;
-  overflow: hidden; // 防止外层滚动
+  gap: 16px;
+  padding: 16px;
+  background: transparent;
+  overflow: hidden;
+  box-sizing: border-box;
 
   .session-sidebar {
     width: 280px;
-    background: #fff;
-    border-right: 1px solid #e4e7ed;
+    background: rgba($color-bg-paper, 0.95);
+    border: 1px solid $color-ink-light;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    height: 100%; // 跟随 .ai-assistant 高度
-    overflow: hidden; // 防止侧边栏整体滚动
+    height: 100%;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
     .sidebar-header {
       padding: 16px;
-      border-bottom: 1px solid #e4e7ed;
+      border-bottom: 1px solid $color-ink-light;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -1099,6 +1105,7 @@ onMounted(async () => {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
+        color: $color-ink-primary;
       }
     }
 
@@ -1117,9 +1124,11 @@ onMounted(async () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        color: $color-ink-secondary;
 
         &:hover {
-          background: #f5f7fa;
+          background: rgba($color-ink-light, 0.1);
+          color: $color-ink-primary;
 
           .session-actions {
             opacity: 1;
@@ -1127,8 +1136,9 @@ onMounted(async () => {
         }
 
         &.active {
-          background: #ecf5ff;
-          border-left: 3px solid #409eff;
+          background: rgba($color-ink-primary, 0.05);
+          border-left: 3px solid $color-ink-primary;
+          color: $color-ink-primary;
         }
 
         .session-edit {
@@ -1148,7 +1158,7 @@ onMounted(async () => {
           .session-title {
             font-size: 14px;
             font-weight: 500;
-            color: #303133;
+            color: inherit;
             margin-bottom: 4px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1159,7 +1169,7 @@ onMounted(async () => {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
-            color: #909399;
+            color: $color-ink-light;
           }
         }
 
@@ -1177,9 +1187,12 @@ onMounted(async () => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fff;
-    height: 100%; // 跟随 .ai-assistant 高度
-    overflow: hidden; // 防止容器整体滚动
+    background: rgba($color-bg-paper, 0.95);
+    border-radius: 12px;
+    border: 1px solid $color-ink-light;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    overflow: hidden;
 
     .chat-empty {
       flex: 1;
@@ -1190,19 +1203,21 @@ onMounted(async () => {
 
     .agent-buttons {
       padding: 12px 20px;
-      border-bottom: 1px solid #e4e7ed;
-      background: #f5f7fa;
+      border-bottom: 1px solid $color-ink-light;
+      background: transparent;
       display: flex;
       align-items: center;
       gap: 12px;
-      flex-shrink: 0; // 防止按钮区域被压缩
+      flex-shrink: 0;
 
       .el-button {
         transition: all 0.3s;
 
         &.active-agent {
           font-weight: 600;
-          box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          border-color: $color-ink-primary;
+          color: $color-ink-primary;
         }
       }
     }
@@ -1212,7 +1227,7 @@ onMounted(async () => {
       overflow-y: auto;
       padding: 20px;
       scroll-behavior: smooth;
-      min-height: 0; // 重要：允许 flex 子元素正确收缩
+      min-height: 0;
 
       .message-item {
         display: flex;
@@ -1230,8 +1245,9 @@ onMounted(async () => {
             }
 
             .message-body {
-              background: #409eff;
+              background: $color-bamboo-primary; // 竹青色
               color: #fff;
+              box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
             }
           }
         }
@@ -1255,7 +1271,7 @@ onMounted(async () => {
             .message-sender {
               font-size: 14px;
               font-weight: 600;
-              color: #303133;
+              color: $color-ink-primary;
             }
 
             .message-header-right {
@@ -1266,207 +1282,42 @@ onMounted(async () => {
 
             .message-time {
               font-size: 12px;
-              color: #909399;
+              color: $color-ink-light;
             }
           }
 
           .message-body {
             padding: 12px 16px;
             border-radius: 8px;
-            background: #f5f7fa;
+            background: rgba(209, 250, 229, 0.4); // 极淡的竹青色背景
             line-height: 1.6;
             word-wrap: break-word;
             max-width: 85%;
+            color: $color-ink-primary;
+            border: 1px solid rgba(16, 185, 129, 0.1);
 
             &.streaming {
               animation: pulse 1.5s infinite;
             }
 
-            // 标题样式（优化间距与行高）
-            :deep(h1) {
-              font-size: 24px;
-              font-weight: 700;
-              line-height: 1.3;
-              margin: 16px 0 8px 0;
-              padding-bottom: 8px;
-              border-bottom: 2px solid #dcdfe6;
-              color: #303133;
-
-              &:first-child {
-                margin-top: 0;
-              }
+            :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
+               color: $color-ink-primary;
+               border-color: $color-ink-light;
             }
-
-            :deep(h2) {
-              font-size: 20px;
-              font-weight: 600;
-              line-height: 1.3;
-              margin: 16px 0 8px 0;
-              padding-bottom: 6px;
-              border-bottom: 1px solid #e4e7ed;
-              color: #303133;
-
-              &:first-child {
-                margin-top: 0;
-              }
-            }
-
-            :deep(h3) {
-              font-size: 18px;
-              font-weight: 600;
-              line-height: 1.4;
-              margin: 16px 0 8px 0;
-              color: #606266;
-
-              &:first-child {
-                margin-top: 0;
-              }
-            }
-
-            :deep(h4) {
-              font-size: 16px;
-              font-weight: 600;
-              line-height: 1.4;
-              margin: 16px 0 8px 0;
-              color: #606266;
-
-              &:first-child {
-                margin-top: 0;
-              }
-            }
-
-            :deep(h5), :deep(h6) {
-              font-size: 14px;
-              font-weight: 600;
-              line-height: 1.4;
-              margin: 16px 0 8px 0;
-              color: #909399;
-
-              &:first-child {
-                margin-top: 0;
-              }
-            }
-
-            // 段落样式（增加段落间距）
-            :deep(p) {
-              margin: 0 0 12px 0;
-
-              &:first-child {
-                margin-top: 0;
-              }
-
-              &:last-child {
-                margin-bottom: 0;
-              }
-            }
-
-            // 列表样式（优化缩进和间距）
-            :deep(ul), :deep(ol) {
-              margin: 8px 0 12px 0;
-              padding-left: 20px;
-
-              li {
-                margin: 4px 0;
-                line-height: 1.6;
-              }
-            }
-
-            :deep(ul) {
-              li {
-                list-style-type: disc;
-              }
-
-              ul li {
-                list-style-type: circle;
-              }
-
-              ul ul li {
-                list-style-type: square;
-              }
-            }
-
-            // 引用块样式
-            :deep(blockquote) {
-              margin: 8px 0;
-              padding: 8px 12px;
-              border-left: 4px solid #409eff;
-              background: rgba(64, 158, 255, 0.05);
-              color: #606266;
-
-              p {
-                margin: 4px 0;
-              }
-            }
-
-            // 代码块样式
-            :deep(pre) {
-              margin: 8px 0;
-              border-radius: 4px;
-              overflow-x: auto;
-
-              code {
-                font-family: 'Courier New', Consolas, Monaco, monospace;
-                font-size: 14px;
-              }
-            }
-
-            // 行内代码样式
-            :deep(code:not(pre code)) {
-              background: rgba(0, 0, 0, 0.1);
-              padding: 2px 6px;
-              border-radius: 3px;
-              font-family: 'Courier New', Consolas, Monaco, monospace;
-              font-size: 13px;
-              color: #e83e8c;
-            }
-
-            // 分隔线样式
-            :deep(hr) {
-              margin: 16px 0;
-              border: none;
-              border-top: 2px solid #e4e7ed;
-            }
-
-            // 表格样式
-            :deep(table) {
-              border-collapse: collapse;
-              width: 100%;
-              margin: 8px 0;
-
-              th, td {
-                border: 1px solid #dcdfe6;
-                padding: 8px 12px;
-                text-align: left;
-              }
-
-              th {
-                background: #f5f7fa;
-                font-weight: 600;
-              }
-
-              tr:nth-child(even) {
-                background: #fafafa;
-              }
-            }
-
-            // 链接样式
-            :deep(a) {
-              color: #409eff;
-              text-decoration: none;
-
-              &:hover {
-                text-decoration: underline;
-              }
-            }
-
-            // 强调样式
+            
             :deep(strong) {
-              font-weight: 600;
-              color: #303133;
+               color: $color-ink-dark;
             }
-
-            :deep(em) {
-              font-style: italic;
+            
+            :deep(blockquote) {
+               border-left-color: $color-ink-secondary;
+               background: rgba($color-ink-secondary, 0.1);
+               color: $color-ink-secondary;
+            }
+            
+            :deep(a) {
+               color: $color-ink-primary;
+               text-decoration: underline;
             }
           }
 
@@ -1474,14 +1325,15 @@ onMounted(async () => {
             margin-top: 10px;
             padding: 12px 14px;
             border-radius: 8px;
-            border: 1px dashed #dcdfe6;
-            background: #fdf6ec;
-            color: #8c6b34;
+            border: 1px dashed $color-ink-light;
+            background: rgba($color-bg-base, 0.5);
+            color: $color-ink-secondary;
             max-width: 70%;
 
             .recommend-title {
               font-weight: 600;
               margin-bottom: 6px;
+              color: $color-ink-primary;
             }
 
             .recommend-name {
@@ -1490,7 +1342,7 @@ onMounted(async () => {
             }
 
             .recommend-link {
-              color: #d48806;
+              color: $color-ink-primary;
               text-decoration: none;
               font-weight: 600;
             }
@@ -1500,10 +1352,10 @@ onMounted(async () => {
     }
 
     .input-area {
-      border-top: 1px solid #e4e7ed;
+      border-top: 1px solid $color-ink-light;
       padding: 16px;
-      flex-shrink: 0; // 防止输入区域被压缩
-      background: #fff; // 确保背景不透明
+      flex-shrink: 0;
+      background: transparent;
 
       .input-wrapper {
         position: relative;
@@ -1520,6 +1372,9 @@ onMounted(async () => {
             gap: 4px;
             font-weight: 500;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: $color-bg-paper;
+            border-color: $color-ink-light;
+            color: $color-ink-primary;
 
             .el-icon {
               font-size: 14px;
@@ -1528,11 +1383,18 @@ onMounted(async () => {
         }
 
         :deep(.el-textarea__inner) {
-          padding-right: 160px; // 给右侧图标留出空间
+          padding-right: 160px;
           padding-left: 12px;
+          background-color: rgba(255, 255, 255, 0.5);
+          border-color: $color-ink-light;
+          color: $color-ink-primary;
+          
+          &:focus {
+             border-color: $color-ink-primary;
+             box-shadow: 0 0 0 1px $color-ink-primary inset;
+          }
         }
 
-        // 当有 AGENT 标识时，增加左侧内边距
         &:has(.agent-badge) {
           :deep(.el-textarea__inner) {
             padding-left: 160px;
@@ -1605,19 +1467,24 @@ onMounted(async () => {
   .ai-assistant {
     flex-direction: column;
     height: 100%;
+    padding: 0;
+    gap: 0;
 
     .session-sidebar {
       width: 100%;
       height: 200px;
       border-right: none;
-      border-bottom: 1px solid #e4e7ed;
-      flex-shrink: 0; // 防止被压缩
+      border-bottom: 1px solid $color-ink-light;
+      flex-shrink: 0;
+      border-radius: 0;
     }
 
     .chat-container {
-      flex: 1; // 占据剩余空间
-      height: auto; // 自动计算高度
-      min-height: 0; // 允许正确收缩
+      flex: 1;
+      height: auto;
+      min-height: 0;
+      border-radius: 0;
+      border: none;
     }
   }
 }

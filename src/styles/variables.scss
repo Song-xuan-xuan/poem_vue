@@ -1,58 +1,73 @@
 // ==================== 诗词社区 - 设计 Token ====================
-// 以"竹"为核心的中华传统美学设计系统
+// 核心视觉主题：清风竹影 (Bamboo Zen)
 
-// ==================== 色彩系统 ====================
-// 主色调：竹青系（更清雅的绿色调）
-$color-bamboo-primary: #6b9080;      // 竹青（提亮，更温和）
-$color-bamboo-light: #a4c3b2;        // 浅竹青（更柔和）
-$color-bamboo-dark: #4a6b5c;         // 深竹青（降低饱和度）
+// ==================== 色彩系统 (护眼模式 / Muted Mode) ====================
+// 主色调：深竹青 (Deep Bamboo) - 降低亮度，减少刺眼感
+$color-bamboo-primary: #047857;      // Emerald 700 - 主按钮、高亮
+$color-bamboo-secondary: #0F766E;    // Teal 700 - Hover、深色装饰
+$color-bamboo-light: #6EE7B7;        // Emerald 300 - 浅色背景、标签 (加深)
+$color-bamboo-dark: #022C22;         // Emerald 950 - 极深文字
 
-// 辅助色：墨色系（更柔和的灰色调）
-$color-ink-black: #3a4f5c;           // 墨黑（偏蓝灰，更文雅）
-$color-ink-gray: #6b7c8c;            // 墨灰（降低对比度）
-$color-ink-light: #a8b5c0;           // 淡墨（更柔和）
+// 墨色系 (Ink) - 加深以适配深色背景
+$color-ink-primary: #0F172A;         // Slate 900 - 正文 (近乎纯黑)
+$color-ink-secondary: #1F2937;       // Gray 800 - 次要信息
+$color-ink-light: #94A3B8;           // Slate 400 - 边框 (加深)
+$color-ink-dark: #020617;            // Slate 950
 
-// 背景色：宣纸系（更温暖的米色调）
-$color-paper-white: #f8f6f0;         // 宣纸白（偏暖）
-$color-paper-beige: #f2ede3;         // 米白（更温暖）
-$color-paper-cream: #eae5d9;         // 奶白（增加黄调）
+// 背景色：青灰宣纸 (Muted Rice Paper)
+$color-bg-base: #E0E5E4;             // 青灰色 - 全局底色 (吸光质感)
+$color-bg-paper: #F0F2F0;            // 灰白玉 - 卡片背景 (不透明/微透)
+$color-bg-overlay: rgba(240, 242, 240, 0.95); // 遮罩 (高不透明度)
 
-// 点缀色（降低饱和度，更克制）
-$color-accent-gold: #c9a961;         // 印章金（降低饱和度）
-$color-accent-red: #b8705f;          // 朱砂红（降低饱和度，更温和）
+// 点缀色
+$color-seal-red: #9F1239;            // 茜素红 (Rose 800) - 暗红印章
+$color-accent-gold: #B45309;         // 暗金 (Amber 700)
+
+// 兼容旧变量名 (Mapping)
+$color-ink-black: $color-ink-primary;
+$color-ink-gray: $color-ink-secondary;
+$color-paper-white: $color-bg-base;
+$color-paper-beige: $color-bg-paper;
+$color-paper-cream: #ECFDF5;         // Emerald 50
+$color-accent-red: $color-seal-red;
 
 // ==================== 渐变背景 ====================
-// 主背景：竹影渐变（更温暖的宣纸质感）
+// 全局背景：暮色竹林 (Twilight Bamboo)
 $gradient-bamboo-bg: linear-gradient(
-  135deg,
-  rgba(248, 246, 240, 0.98) 0%,
-  rgba(242, 237, 227, 1) 50%,
-  rgba(234, 229, 217, 0.98) 100%
+  to bottom,
+  #E0E5E4 0%,
+  #D1D5DB 100%
 );
 
-// 卡片背景：半透明米白（更温暖）
+// 兼容旧背景变量
+$gradient-winter-bg: $gradient-bamboo-bg;
+
+// 卡片背景：凝脂老玉 (Matte Jade)
+$bg-card-paper: #F0F2F0;
 $gradient-card-bg: linear-gradient(
   135deg,
-  rgba(255, 253, 248, 0.9) 0%,
-  rgba(252, 249, 243, 0.85) 100%
+  #F0F2F0 0%,
+  #E2E8F0 100%
 );
 
-// 导航栏背景：毛玻璃效果（偏暖色调）
-$gradient-nav-bg: linear-gradient(
-  180deg,
-  rgba(255, 253, 248, 0.85) 0%,
-  rgba(252, 249, 243, 0.8) 100%
-);
+// 导航栏背景
+$gradient-nav-bg: rgba(224, 229, 228, 0.9);
 
 // ==================== 字体系统 ====================
+// 优先使用衬线体 (Serif)
+$font-family-serif: 'Noto Serif SC', 'Songti SC', 'SimSun', 'Times New Roman', serif;
+$font-family-sans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+
+$font-family-primary: $font-family-serif;
+
 // 中文字体栈
-$font-family-chinese: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+$font-family-chinese: $font-family-serif;
 // 英文字体栈
 $font-family-english: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-// 诗词专用字体（衬线）
-$font-family-poem: 'STKaiti', 'KaiTi', 'FangSong', serif;
+// 诗词专用字体
+$font-family-poem: $font-family-serif;
 
-// 字号系统（8px 基准）
+// 字号系统
 $font-size-xs: 12px;
 $font-size-sm: 14px;
 $font-size-base: 16px;
@@ -68,7 +83,7 @@ $line-height-normal: 1.6;
 $line-height-relaxed: 1.8;
 $line-height-loose: 2.0;
 
-// ==================== 间距系统（4px 步进）====================
+// ==================== 间距系统 ====================
 $spacing-xs: 4px;
 $spacing-sm: 8px;
 $spacing-md: 16px;
@@ -80,23 +95,36 @@ $spacing-3xl: 64px;
 // ==================== 圆角系统 ====================
 $radius-sm: 4px;
 $radius-md: 8px;
-$radius-lg: 12px;
+$radius-lg: 12px; // 竹节感
 $radius-xl: 16px;
 $radius-2xl: 24px;
 $radius-round: 9999px;
 
-// ==================== 阴影系统 ====================
-// 轻量阴影（卡片悬浮）
-$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+// ==================== 阴影与边框 ====================
+// 泛着绿意的柔光阴影
+$shadow-jade-sm: 0 2px 8px -2px rgba(16, 185, 129, 0.1);
+$shadow-jade-md: 0 8px 32px -8px rgba(16, 185, 129, 0.15);
+$shadow-jade-lg: 0 20px 40px -12px rgba(16, 185, 129, 0.2);
 
-// 毛玻璃阴影
-$shadow-glass: 0 8px 32px rgba(90, 140, 111, 0.15);
+$border-jade-light: 1px solid rgba(16, 185, 129, 0.1);
+
+// 兼容旧阴影
+$shadow-sm: $shadow-jade-sm;
+$shadow-md: $shadow-jade-md;
+$shadow-lg: $shadow-jade-lg;
+$shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+
+// 兼容旧 Ink 阴影变量
+$shadow-ink-sm: $shadow-jade-sm;
+$shadow-ink-md: $shadow-jade-md;
+$shadow-ink-lg: $shadow-jade-lg;
+
+// 兼容旧边框变量
+$border-double-ink: 3px double rgba(16, 185, 129, 0.2); // 竹青色双线
 
 // ==================== 模糊效果 ====================
 $blur-sm: blur(8px);
-$blur-md: blur(16px);
+$blur-md: blur(12px); // 温润磨砂感
 $blur-lg: blur(24px);
 
 // ==================== 过渡动画 ====================

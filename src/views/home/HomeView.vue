@@ -17,31 +17,31 @@ const handleGoToAI = () => {
   router.push('/ai')
 }
 
-// 功能特色（使用新的配色）
+// 功能特色（使用新的配色 - 护眼模式）
 const features = [
   {
     icon: Reading,
     title: '诗词集市',
     desc: '海量古诗词库，按朝代、作者、标签精准检索',
-    color: '#6b9080'  // 竹青
+    color: '#047857'  // 深竹青 (Emerald 700)
   },
   {
     icon: ChatDotRound,
     title: '论坛社区',
     desc: '与诗友交流创作心得，分享诗词感悟',
-    color: '#a4c3b2'  // 浅竹青
+    color: '#0F766E'  // 深青 (Teal 700)
   },
   {
     icon: Compass,
     title: 'AI 助手',
     desc: '智能对诗、诗词解析、创作辅助',
-    color: '#c9a961'  // 印章金
+    color: '#B45309'  // 暗金 (Amber 700)
   },
   {
     icon: TrophyBase,
     title: '成长体系',
     desc: '经验值、等级、成就，见证你的诗词之路',
-    color: '#b8705f'  // 朱砂红
+    color: '#9F1239'  // 茜素红 (Rose 800)
   }
 ]
 </script>
@@ -50,22 +50,9 @@ const features = [
   <div class="home-view">
     <!-- Hero 区：左侧文案 + 右侧每日一首 -->
     <section class="hero-section">
-      <!-- 诗词装饰元素 -->
-      <div class="poem-decoration">
-        <!-- 左上角印章 -->
-        <div class="seal seal-top">诗</div>
-        <!-- 右下角印章 -->
-        <div class="seal seal-bottom">词</div>
-        <!-- 竹节装饰 -->
-        <div class="bamboo-node bamboo-node-1"></div>
-        <div class="bamboo-node bamboo-node-2"></div>
-        <div class="bamboo-node bamboo-node-3"></div>
-      </div>
-
       <!-- 左侧：主标题与行动按钮 -->
       <div class="hero-content">
         <div class="hero-badge">
-          <span class="badge-icon">🎋</span>
           <span class="badge-text">传承中华诗词之美</span>
         </div>
 
@@ -87,39 +74,35 @@ const features = [
         </p>
 
         <div class="hero-actions">
-          <el-button
-            type="primary"
-            size="large"
-            class="action-btn primary-btn"
-            @click="handleStartLearning"
-          >
+          <button class="ink-btn ink-btn-primary" @click="handleStartLearning">
             <el-icon><Reading /></el-icon>
             <span>开始学习</span>
-          </el-button>
+          </button>
 
-          <el-button
-            size="large"
-            class="action-btn secondary-btn"
-            @click="handleGoToCommunity"
-          >
+          <button class="ink-btn ink-btn-ghost" @click="handleGoToCommunity">
             <el-icon><ChatDotRound /></el-icon>
             <span>社区交流</span>
-          </el-button>
-
-          <el-button
-            size="large"
-            class="action-btn tertiary-btn"
-            @click="handleGoToAI"
-          >
+          </button>
+          
+          <button class="ink-btn ink-btn-ghost" @click="handleGoToAI">
             <el-icon><Compass /></el-icon>
             <span>AI 助手</span>
-          </el-button>
+          </button>
         </div>
       </div>
 
       <!-- 右侧：每日一首（融合式展示）-->
       <div class="hero-daily-poem">
-        <DailyPoem />
+        <div class="card-wrapper">
+          <DailyPoem />
+          <!-- 朱砂印章 -->
+          <div class="seal-mark">
+            <svg viewBox="0 0 100 100" class="seal-svg">
+              <rect x="5" y="5" width="90" height="90" rx="5" fill="none" stroke="#AA3A3A" stroke-width="3" />
+              <text x="50" y="50" font-family="serif" font-size="40" fill="#AA3A3A" text-anchor="middle" dominant-baseline="central">诗境</text>
+            </svg>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -155,132 +138,6 @@ const features = [
   }
 }
 
-// ==================== 诗词装饰元素 ====================
-.poem-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 0;
-
-  // 印章样式（更柔和的朱砂红）
-  .seal {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: $color-accent-red;
-    color: $color-paper-white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: bold;
-    font-family: $font-family-poem;
-    border: 3px solid $color-accent-red;
-    box-shadow: 0 4px 12px rgba(184, 112, 95, 0.25);
-    opacity: 0.8;
-    transform: rotate(-5deg);
-    animation: sealFade 3s ease-in-out infinite;
-
-    &.seal-top {
-      top: 10%;
-      left: 5%;
-    }
-
-    &.seal-bottom {
-      bottom: 15%;
-      right: 8%;
-      transform: rotate(8deg);
-      animation-delay: 1.5s;
-    }
-
-    @media (max-width: $breakpoint-tablet) {
-      display: none;
-    }
-  }
-
-  // 竹节装饰（使用新的竹青色）
-  .bamboo-node {
-    position: absolute;
-    width: 8px;
-    height: 80px;
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      rgba(107, 144, 128, 0.12) 10%,
-      rgba(107, 144, 128, 0.2) 48%,
-      rgba(107, 144, 128, 0.25) 50%,
-      rgba(107, 144, 128, 0.2) 52%,
-      rgba(107, 144, 128, 0.12) 90%,
-      transparent 100%
-    );
-    border-radius: 4px;
-
-    // 竹节纹理
-    &::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: -2px;
-      right: -2px;
-      height: 3px;
-      background: rgba(107, 144, 128, 0.35);
-      transform: translateY(-50%);
-    }
-
-    &.bamboo-node-1 {
-      top: 20%;
-      left: 2%;
-      animation: bambooSway 4s ease-in-out infinite;
-    }
-
-    &.bamboo-node-2 {
-      top: 50%;
-      right: 3%;
-      height: 100px;
-      animation: bambooSway 5s ease-in-out infinite;
-      animation-delay: 1s;
-    }
-
-    &.bamboo-node-3 {
-      bottom: 20%;
-      left: 8%;
-      height: 70px;
-      animation: bambooSway 4.5s ease-in-out infinite;
-      animation-delay: 2s;
-    }
-
-    @media (max-width: $breakpoint-tablet) {
-      display: none;
-    }
-  }
-}
-
-// 印章淡入淡出动画（更柔和）
-@keyframes sealFade {
-  0%, 100% {
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-
-// 竹子摇曳动画
-@keyframes bambooSway {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(2deg);
-  }
-  75% {
-    transform: rotate(-2deg);
-  }
-}
-
 // ==================== Hero 左侧：文案区 ====================
 .hero-content {
   position: relative;
@@ -289,14 +146,14 @@ const features = [
   flex-direction: column;
   gap: $spacing-xl;
 
-  // 徽章（使用新的竹青色）
+  // 徽章（竹青色 - 加深）
   .hero-badge {
     display: inline-flex;
     align-items: center;
     gap: $spacing-sm;
     padding: $spacing-sm $spacing-lg;
-    background: rgba(107, 144, 128, 0.08);
-    border: 1px solid rgba(107, 144, 128, 0.18);
+    background: rgba(4, 120, 87, 0.1); // 深竹青淡色背景
+    border: 1px solid rgba(4, 120, 87, 0.2);
     border-radius: $radius-round;
     width: fit-content;
 
@@ -306,8 +163,8 @@ const features = [
 
     .badge-text {
       font-size: $font-size-sm;
-      color: $color-bamboo-primary;
-      font-weight: 500;
+      color: #047857; // Emerald 700
+      font-weight: 600;
       font-family: $font-family-chinese;
     }
   }
@@ -317,24 +174,26 @@ const features = [
     font-size: $font-size-4xl;
     font-weight: 700;
     line-height: $line-height-tight;
-    color: $color-ink-black;
-    font-family: $font-family-chinese;
+    color: $color-ink-primary; // Slate 900
+    font-family: $font-family-serif;
     margin: 0;
+    letter-spacing: 0.05em;
 
     .title-highlight {
-      color: $color-bamboo-primary;
+      color: #047857; // Emerald 700
       position: relative;
 
-      // 下划线装饰
+      // 竹影装饰
       &::after {
         content: '';
         position: absolute;
         left: 0;
-        bottom: -4px;
+        bottom: 2px;
         width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, $color-bamboo-primary, transparent);
-        border-radius: $radius-sm;
+        height: 10px;
+        background: rgba(4, 120, 87, 0.15);
+        z-index: -1;
+        transform: skewX(-15deg);
       }
     }
 
@@ -343,34 +202,31 @@ const features = [
     }
   }
 
-  // 诗词名句装饰（使用新的竹青色）
+  // 诗词名句装饰
   .poem-quote {
     position: relative;
     padding: $spacing-lg $spacing-xl;
-    background: linear-gradient(
-      135deg,
-      rgba(107, 144, 128, 0.04) 0%,
-      rgba(107, 144, 128, 0.07) 100%
-    );
-    border-left: 4px solid $color-bamboo-primary;
+    background: #F0F2F0; // 灰白玉 (不透明)
+    border-left: 4px solid #047857; // 深竹青
     border-radius: $radius-md;
     margin: $spacing-md 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); // 微弱阴影
 
     .quote-mark {
       position: absolute;
       top: -10px;
       left: 10px;
       font-size: 48px;
-      color: $color-bamboo-light;
-      opacity: 0.3;
+      color: #047857;
+      opacity: 0.15;
       font-family: Georgia, serif;
       line-height: 1;
     }
 
     .quote-text {
       font-size: $font-size-xl;
-      font-family: $font-family-poem;
-      color: $color-ink-black;
+      font-family: $font-family-serif;
+      color: $color-ink-primary;
       margin: 0 0 $spacing-sm 0;
       letter-spacing: 3px;
       text-align: center;
@@ -379,9 +235,9 @@ const features = [
 
     .quote-author {
       font-size: $font-size-sm;
-      color: $color-ink-gray;
+      color: $color-ink-secondary;
       text-align: right;
-      font-family: $font-family-chinese;
+      font-family: $font-family-serif;
       font-style: italic;
     }
 
@@ -417,17 +273,22 @@ const features = [
   }
 }
 
-// ==================== 行动按钮样式 ====================
-.action-btn {
+// ==================== 行动按钮样式 (Enamel Style) ====================
+.ink-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 48px;
   padding: 0 $spacing-xl;
-  border-radius: $radius-lg;
+  border-radius: 12px; // 略带棱角，体现竹节感
   font-size: $font-size-base;
-  font-family: $font-family-chinese;
-  font-weight: 500;
+  font-family: $font-family-serif;
+  font-weight: 600;
   transition: all $transition-base;
-  border: none;
-
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  
   .el-icon {
     margin-right: $spacing-sm;
     font-size: $font-size-lg;
@@ -440,51 +301,110 @@ const features = [
   }
 }
 
-// 主按钮
-.primary-btn {
-  background: $color-bamboo-primary;
-  color: #fff;
-  box-shadow: $shadow-md;
+// 主按钮：珐琅彩风格 (加深)
+.ink-btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #0F766E 100%); // Emerald 600 -> Teal 700
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3); // 深绿色光晕
+
+  // 金色内描边效果 (伪元素)
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border: 1px solid rgba(180, 83, 9, 0.3); // 暗金色
+    border-radius: 10px;
+    pointer-events: none;
+  }
 
   &:hover {
-    background: $color-bamboo-dark;
     transform: translateY(-2px);
-    box-shadow: $shadow-lg;
+    box-shadow: 0 6px 16px rgba(4, 120, 87, 0.4);
+    filter: brightness(1.1);
   }
 }
 
-// 次按钮
-.secondary-btn {
-  background: rgba(255, 255, 255, 0.8);
-  color: $color-bamboo-primary;
-  border: 2px solid $color-bamboo-primary;
+// 次级按钮：清透风格 (加深)
+.ink-btn-ghost {
+  background: transparent;
+  color: #047857; // Emerald 700
+  border: 1px solid #6EE7B7; // Emerald 300
 
   &:hover {
-    background: rgba(90, 140, 111, 0.1);
+    background: rgba(4, 120, 87, 0.05); // 极淡的深绿背景
+    border-color: #047857;
     transform: translateY(-2px);
   }
 }
 
-// 第三按钮
-.tertiary-btn {
-  background: rgba(212, 175, 55, 0.1);
-  color: $color-accent-gold;
-  border: 2px solid $color-accent-gold;
-
-  &:hover {
-    background: rgba(212, 175, 55, 0.2);
-    transform: translateY(-2px);
-  }
-}
-
-// ==================== Hero 右侧：每日一首 ====================
+// ==================== Hero 右侧：每日一首 (Matte Jade Style) ====================
 .hero-daily-poem {
-  // 移除固定定位，融入 Hero 区
   position: relative;
   width: 100%;
-
-  // 添加轻微动画
   animation: float 6s ease-in-out infinite;
+
+  .card-wrapper {
+    position: relative;
+    // 凝脂老玉质感 (不透明)
+    background: #F0F2F0;
+    // 移除 backdrop-filter 以去除发光感
+    border: 1px solid rgba(148, 163, 184, 0.2); // 灰蓝边框
+    border-radius: 16px;
+    padding: $spacing-lg;
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1); // 深色投影
+    
+    // 回纹装饰 (Corner Ornaments - Darkened)
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #94A3B8; // Slate 400
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    // 左上角
+    &::before {
+      top: 12px;
+      left: 12px;
+      border-right: none;
+      border-bottom: none;
+      border-top-left-radius: 4px;
+    }
+
+    // 右下角
+    &::after {
+      bottom: 12px;
+      right: 12px;
+      border-left: none;
+      border-top: none;
+      border-bottom-right-radius: 4px;
+    }
+    
+    // 确保内容在纹理之上
+    :deep(*) {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  // 朱砂印章 (加深)
+  .seal-mark {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    z-index: 2;
+    transform: rotate(-15deg);
+    opacity: 0.9;
+    filter: drop-shadow(2px 4px 6px rgba(159, 18, 57, 0.2)); // Rose 800 shadow
+  }
 
   @media (max-width: $breakpoint-tablet) {
     max-width: 500px;
@@ -525,7 +445,7 @@ const features = [
       transform: translateX(-50%);
       width: 60px;
       height: 3px;
-      background: $color-bamboo-primary;
+      background: #10B981; // 竹青
       border-radius: $radius-sm;
     }
   }
@@ -549,9 +469,9 @@ const features = [
 
 // 功能卡片
 .feature-card {
-  background: $gradient-card-bg;
-  backdrop-filter: $blur-sm;
-  border: 1px solid rgba(90, 140, 111, 0.1);
+  background: #F0F2F0; // 灰白玉
+  // 移除 backdrop-filter
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: $radius-xl;
   padding: $spacing-xl;
   text-align: center;
@@ -560,8 +480,8 @@ const features = [
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: $shadow-lg;
-    border-color: rgba(90, 140, 111, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    border-color: rgba(4, 120, 87, 0.3);
   }
 
   .feature-icon {
@@ -570,10 +490,11 @@ const features = [
     justify-content: center;
     width: 64px;
     height: 64px;
-    background: rgba(255, 255, 255, 0.8);
+    background: #FFFFFF; // 纯白背景以突出图标
     border-radius: $radius-xl;
     margin-bottom: $spacing-md;
     transition: transform $transition-base;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   &:hover .feature-icon {
