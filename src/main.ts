@@ -13,17 +13,7 @@ import router from './router'
  * 初始化应用
  */
 async function bootstrap() {
-  // 检查是否启用 Mock
-  const useMock = import.meta.env.VITE_USE_MOCK === 'true'
-  
-  if (useMock) {
-    console.log('[App] Mock 模式已启用')
-    const { setupMock } = await import('./mock')
-    await setupMock()
-  } else {
-    console.log('[App] 使用真实 API')
-  }
-  
+
   const app = createApp(App)
   
   // 注册所有 Element Plus 图标
