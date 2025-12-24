@@ -1,7 +1,22 @@
 <template>
   <div class="ai-assistant">
+    <BambooBackground />
     <!-- 左侧：会话列表 -->
-    <div class="session-sidebar">
+    <div class="session-sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
+      <!-- 装饰：角落回纹 -->
+      <div class="sidebar-decoration top-left">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M2 2H22V22" stroke="#10B981" stroke-width="1" stroke-opacity="0.2"/>
+          <path d="M6 6H18V18" stroke="#10B981" stroke-width="1" stroke-opacity="0.15"/>
+        </svg>
+      </div>
+      <div class="sidebar-decoration bottom-right">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M22 22H2V2" stroke="#10B981" stroke-width="1" stroke-opacity="0.2"/>
+          <path d="M18 18H6V6" stroke="#10B981" stroke-width="1" stroke-opacity="0.15"/>
+        </svg>
+      </div>
+
       <div class="sidebar-header">
         <h3>会话列表</h3>
         <el-button
@@ -10,6 +25,7 @@
           :icon="Plus"
           :loading="createLoading"
           @click="handleCreateSession"
+          class="new-session-btn"
         >
           新建
         </el-button>
@@ -54,13 +70,37 @@
       </div>
     </div>
 
+    <!-- 侧边栏折叠按钮 (小脚标) -->
+    <div 
+      class="sidebar-toggle-btn" 
+      :class="{ 'is-collapsed': isSidebarCollapsed }"
+      @click="toggleSidebar"
+      title="切换侧边栏"
+    >
+      <el-icon>
+        <ArrowRight v-if="isSidebarCollapsed" />
+        <ArrowLeft v-else />
+      </el-icon>
+    </div>
+
     <!-- 右侧：聊天窗口 -->
     <div class="chat-container">
       
 
       <div v-if="!currentSessionId" class="chat-empty">
-        <el-empty description="请选择或创建一个会话开始对话">
-          <el-button type="primary" @click="handleCreateSession">创建新会话</el-button>
+        <div class="empty-illustration">
+          <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="80" fill="#F0FDF4" opacity="0.5" />
+            <path d="M60,140 Q100,60 140,140" stroke="#10B981" stroke-width="2" fill="none" opacity="0.2" />
+            <text x="100" y="110" font-family="serif" font-size="24" fill="#059669" text-anchor="middle" opacity="0.8">问道</text>
+            <text x="100" y="135" font-family="serif" font-size="14" fill="#059669" text-anchor="middle" opacity="0.6">AI 诗词助手</text>
+          </svg>
+        </div>
+        <el-empty description="请选择或创建一个会话，与 AI 共赏诗词之美">
+          <el-button type="primary" class="create-btn" @click="handleCreateSession">
+            <el-icon class="mr-1"><Plus /></el-icon>
+            开启新对话
+          </el-button>
         </el-empty>
       </div>
 
@@ -254,6 +294,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BambooBackground from '@/components/BambooBackground.vue'
 import {
   Plus,
   Edit,
@@ -269,7 +310,9 @@ import {
   Refresh,
   InfoFilled,
   TrendCharts,
-  MagicStick
+  MagicStick,
+  ArrowLeft,
+  ArrowRight
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { SessionItem, QAPair, ChatMessage } from '@/api/type'
@@ -291,6 +334,12 @@ import 'highlight.js/styles/github-dark.css'
 const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
+
+// 侧边栏折叠状态
+const isSidebarCollapsed = ref(false)
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
 
 // Markdown 渲染器（收紧HTML渲染策略）
 const md: MarkdownIt = new MarkdownIt({
@@ -985,33 +1034,42 @@ onBeforeUnmount(() => {
  */
 const renderMarkdown = (content: string) => {
   if (!content) return ''
-  
+
   // 预处理：修复不规范的 markdown 格式
   let processedContent = content
-  
+
   // 1. 修复标题：识别行首的 # 号，确保 # 与内容之间有空格
   // 支持 1-6 级标题: #内容 → # 内容
   processedContent = processedContent.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
-  
+
   // 2. 修复有序列表：识别行首的数字+点号，确保点号后有空格
   // 1.内容 → 1. 内容
   processedContent = processedContent.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
-  
+
   // 3. 修复无序列表（星号）：识别行首的星号，确保星号后有空格
   // *内容 → * 内容
   processedContent = processedContent.replace(/^(\*)([^\s*])/gm, '$1 $2')
-  
+
   // 4. 修复无序列表（短横线）：识别行首的短横线，确保短横线后有空格
   // -内容 → - 内容
   processedContent = processedContent.replace(/^(-)([^\s-])/gm, '$1 $2')
-  
+
   // 5. 修复加粗：**文本** 确保前后有空格分隔（可选优化）
   processedContent = processedContent.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
-  
+
   // 6. 修复代码块：确保代码块标记独立一行
   processedContent = processedContent.replace(/```(\w*)\n/g, '```$1\n')
-  
-  return md.render(processedContent)
+
+  const rendered = md.render(processedContent)
+
+  // 调试：输出渲染前后的内容（开发环境）
+  if (import.meta.env.DEV) {
+    console.log('[Markdown Debug] 原始内容:', content.substring(0, 200))
+    console.log('[Markdown Debug] 处理后内容:', processedContent.substring(0, 200))
+    console.log('[Markdown Debug] 渲染后 HTML:', rendered.substring(0, 200))
+  }
+
+  return rendered
 }
 
 /**
@@ -1087,43 +1145,101 @@ onMounted(async () => {
   gap: 16px;
   padding: 16px;
   background: transparent;
+  position: relative;
   overflow: hidden;
   box-sizing: border-box;
 
   .session-sidebar {
     width: 280px;
-    background: rgba($color-bg-paper, 0.95);
-    border: 1px solid $color-ink-light;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(209, 250, 229, 0.5);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px -8px rgba(16, 185, 129, 0.15);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    z-index: 10;
+
+    &.collapsed {
+      width: 0;
+      padding: 0;
+      border: none;
+      margin-right: -16px; // 抵消 gap
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-decoration {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+
+      &.top-left {
+        top: 8px;
+        left: 8px;
+      }
+
+      &.bottom-right {
+        bottom: 8px;
+        right: 8px;
+      }
+    }
 
     .sidebar-header {
-      padding: 16px;
-      border-bottom: 1px solid $color-ink-light;
+      padding: 20px;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
+      z-index: 1;
 
       h3 {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
-        color: $color-ink-primary;
+        color: #1F2937;
+        font-family: 'Noto Serif SC', serif;
+        letter-spacing: 1px;
+      }
+
+      .new-session-btn {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        border: none;
+        font-family: 'Noto Serif SC', serif;
+        
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
       }
     }
 
     .session-list {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 12px;
+      position: relative;
+      z-index: 1;
+
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 2px;
+      }
 
       .session-item {
-        padding: 12px;
-        margin-bottom: 4px;
+        padding: 14px;
+        margin-bottom: 8px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
@@ -1131,11 +1247,12 @@ onMounted(async () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: $color-ink-secondary;
+        color: #4B5563;
+        border: 1px solid transparent;
 
         &:hover {
-          background: rgba($color-ink-light, 0.1);
-          color: $color-ink-primary;
+          background: rgba(16, 185, 129, 0.05);
+          color: #059669;
 
           .session-actions {
             opacity: 1;
@@ -1143,9 +1260,22 @@ onMounted(async () => {
         }
 
         &.active {
-          background: rgba($color-ink-primary, 0.05);
-          border-left: 3px solid $color-ink-primary;
-          color: $color-ink-primary;
+          background: rgba(255, 255, 255, 0.8);
+          border-color: rgba(16, 185, 129, 0.2);
+          color: #059669;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
+          
+          &::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 16px;
+            background: #10B981;
+            border-radius: 2px;
+          }
         }
 
         .session-edit {
@@ -1190,14 +1320,48 @@ onMounted(async () => {
     }
   }
 
+  .sidebar-toggle-btn {
+    position: absolute;
+    left: 296px; // 侧边栏宽度(280) + padding(16)
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    color: #059669;
+    box-shadow: 2px 0 8px rgba(16, 185, 129, 0.1);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    backdrop-filter: blur(4px);
+
+    &:hover {
+      background: #ECFDF5;
+      width: 24px;
+    }
+
+    &.is-collapsed {
+      left: 16px; // 收起时贴在左侧 padding 处
+      border-left: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 0 8px 8px 0;
+    }
+  }
+
   .chat-container {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba($color-bg-paper, 0.95);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
     border-radius: 12px;
-    border: 1px solid $color-ink-light;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 8px 32px -8px rgba(16, 185, 129, 0.15);
     height: 100%;
     overflow: hidden;
 
@@ -1206,12 +1370,19 @@ onMounted(async () => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      
+      :deep(.el-empty__description) {
+        font-family: 'Noto Serif SC', serif;
+        color: #4B5563;
+      }
     }
 
     .agent-buttons {
       padding: 12px 20px;
-      border-bottom: 1px solid $color-ink-light;
-      background: transparent;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+      background: rgba(255, 255, 255, 0.4);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -1219,12 +1390,21 @@ onMounted(async () => {
 
       .el-button {
         transition: all 0.3s;
+        border-color: rgba(16, 185, 129, 0.2);
+        background: rgba(255, 255, 255, 0.6);
+
+        &:hover {
+          background: rgba(16, 185, 129, 0.05);
+          border-color: rgba(16, 185, 129, 0.4);
+          color: #059669;
+        }
 
         &.active-agent {
           font-weight: 600;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          border-color: $color-ink-primary;
-          color: $color-ink-primary;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+          border-color: #10B981;
+          color: #059669;
+          background: #ECFDF5;
         }
       }
     }
@@ -1252,9 +1432,10 @@ onMounted(async () => {
             }
 
             .message-body {
-              background: $color-bamboo-primary; // 竹青色
+              background: linear-gradient(135deg, #10B981 0%, #059669 100%);
               color: #fff;
-              box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+              border: none;
             }
           }
         }
@@ -1278,7 +1459,8 @@ onMounted(async () => {
             .message-sender {
               font-size: 14px;
               font-weight: 600;
-              color: $color-ink-primary;
+              color: #374151;
+              font-family: 'Noto Serif SC', serif;
             }
 
             .message-header-right {
@@ -1289,42 +1471,154 @@ onMounted(async () => {
 
             .message-time {
               font-size: 12px;
-              color: $color-ink-light;
+              color: #9CA3AF;
             }
           }
 
           .message-body {
             padding: 12px 16px;
-            border-radius: 8px;
-            background: rgba(209, 250, 229, 0.4); // 极淡的竹青色背景
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
             line-height: 1.6;
             word-wrap: break-word;
             max-width: 85%;
-            color: $color-ink-primary;
-            border: 1px solid rgba(16, 185, 129, 0.1);
+            color: #374151;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            font-family: 'Noto Serif SC', sans-serif;
 
             &.streaming {
               animation: pulse 1.5s infinite;
             }
 
-            :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
-               color: $color-ink-primary;
-               border-color: $color-ink-light;
+            // Markdown 基础样式
+            :deep(h1) {
+               font-size: 1.8em;
+               font-weight: 700;
+               margin: 0.67em 0;
+               color: #111827;
+               border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+               padding-bottom: 0.3em;
             }
-            
-            :deep(strong) {
-               color: $color-ink-dark;
+
+            :deep(h2) {
+               font-size: 1.5em;
+               font-weight: 700;
+               margin: 0.75em 0;
+               color: #111827;
+               border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+               padding-bottom: 0.3em;
             }
-            
+
+            :deep(h3) {
+               font-size: 1.3em;
+               font-weight: 600;
+               margin: 0.83em 0;
+               color: #111827;
+            }
+
+            :deep(h4) {
+               font-size: 1.1em;
+               font-weight: 600;
+               margin: 1em 0;
+               color: #111827;
+            }
+
+            :deep(h5), :deep(h6) {
+               font-size: 1em;
+               font-weight: 600;
+               margin: 1em 0;
+               color: #111827;
+            }
+
+            :deep(p) {
+               margin: 0.8em 0;
+               line-height: 1.7;
+            }
+
+            :deep(strong), :deep(b) {
+               color: #059669;
+               font-weight: 700;
+            }
+
+            :deep(em), :deep(i) {
+               font-style: italic;
+               color: #374151;
+            }
+
+            :deep(ul), :deep(ol) {
+               margin: 0.8em 0;
+               padding-left: 2em;
+            }
+
+            :deep(li) {
+               margin: 0.4em 0;
+               line-height: 1.6;
+            }
+
             :deep(blockquote) {
-               border-left-color: $color-ink-secondary;
-               background: rgba($color-ink-secondary, 0.1);
-               color: $color-ink-secondary;
+               border-left: 4px solid #10B981;
+               background: rgba(16, 185, 129, 0.05);
+               color: #4B5563;
+               margin: 1em 0;
+               padding: 0.5em 1em;
+               border-radius: 4px;
             }
-            
+
+            :deep(code) {
+               background: rgba(16, 185, 129, 0.08);
+               color: #059669;
+               padding: 0.2em 0.4em;
+               border-radius: 3px;
+               font-family: 'Courier New', Courier, monospace;
+               font-size: 0.9em;
+            }
+
+            :deep(pre) {
+               background: #1f2937;
+               color: #e5e7eb;
+               padding: 1em;
+               border-radius: 6px;
+               overflow-x: auto;
+               margin: 1em 0;
+
+               code {
+                  background: transparent;
+                  color: inherit;
+                  padding: 0;
+               }
+            }
+
             :deep(a) {
-               color: $color-ink-primary;
+               color: #059669;
                text-decoration: underline;
+
+               &:hover {
+                  color: #10B981;
+               }
+            }
+
+            :deep(hr) {
+               border: none;
+               border-top: 1px solid rgba(16, 185, 129, 0.2);
+               margin: 1.5em 0;
+            }
+
+            :deep(table) {
+               border-collapse: collapse;
+               width: 100%;
+               margin: 1em 0;
+
+               th, td {
+                  border: 1px solid rgba(16, 185, 129, 0.2);
+                  padding: 0.5em 0.8em;
+                  text-align: left;
+               }
+
+               th {
+                  background: rgba(16, 185, 129, 0.1);
+                  font-weight: 600;
+               }
             }
           }
 
@@ -1359,10 +1653,11 @@ onMounted(async () => {
     }
 
     .input-area {
-      border-top: 1px solid $color-ink-light;
+      border-top: 1px solid rgba(16, 185, 129, 0.2);
       padding: 16px;
       flex-shrink: 0;
-      background: transparent;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
 
       .input-wrapper {
         position: relative;
@@ -1378,10 +1673,10 @@ onMounted(async () => {
             align-items: center;
             gap: 4px;
             font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            background-color: $color-bg-paper;
-            border-color: $color-ink-light;
-            color: $color-ink-primary;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: rgba(16, 185, 129, 0.2);
+            color: #059669;
 
             .el-icon {
               font-size: 14px;
@@ -1392,13 +1687,15 @@ onMounted(async () => {
         :deep(.el-textarea__inner) {
           padding-right: 160px;
           padding-left: 12px;
-          background-color: rgba(255, 255, 255, 0.5);
-          border-color: $color-ink-light;
-          color: $color-ink-primary;
+          background-color: rgba(255, 255, 255, 0.6);
+          border-color: rgba(16, 185, 129, 0.2);
+          color: #374151;
+          transition: all 0.3s;
           
           &:focus {
-             border-color: $color-ink-primary;
-             box-shadow: 0 0 0 1px $color-ink-primary inset;
+             border-color: #10B981;
+             box-shadow: 0 0 0 1px #10B981 inset;
+             background-color: rgba(255, 255, 255, 0.95);
           }
         }
 
