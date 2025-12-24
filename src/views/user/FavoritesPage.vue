@@ -70,11 +70,18 @@
           <div class="card-footer">
             <div class="card-stats">
               <span class="stat-item">
-                <el-icon><Star /></el-icon>
+                <span class="icon-wrapper" aria-hidden="true">
+                  <!-- 空心爱心（与 ForumHome 一致） -->
+                  <svg viewBox="0 0 24 24" width="1.2em" height="1.2em" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12.1 18.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                  </svg>
+                </span>
                 {{ item.work_info.like_count }}
               </span>
               <span class="stat-item">
-                <el-icon><Collection /></el-icon>
+                <span class="icon-wrapper" aria-hidden="true">
+                  <el-icon><StarFilled /></el-icon>
+                </span>
                 {{ item.work_info.collect_count }}
               </span>
               <span class="collect-time">
@@ -106,7 +113,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Delete, Star, Collection, Clock, Loading } from '@element-plus/icons-vue'
+import { Search, Delete, StarFilled, Clock, Loading } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FavoriteItem } from '@/api/type'
 import { getFavorites, unCollect } from '@/api/favorite'
@@ -127,6 +134,22 @@ const favorites = ref<FavoriteItem[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)  // 固定10条/页
+
+// 外部收藏状态变化（从论坛/详情页触发）时，自动刷新收藏列表
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+const scheduleRefresh = () => {
+  if (refreshTimer) clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(() => {
+    // 重置并重新拉取，保证“新增/取消收藏”都能真实同步
+    currentPage.value = 1
+    loadFavorites(false)
+    refreshTimer = null
+  }, 250)
+}
+
+const onCollectChanged = (_e: Event) => {
+  scheduleRefresh()
+}
 
 /**
  * 是否还有更多数据
@@ -228,9 +251,19 @@ const handleUnCollect = async (poemId: string, title: string) => {
     await unCollect(poemId)
     ElMessage.success('取消收藏成功')
 
+    // 通知全局：收藏状态已变化（便于论坛/详情页等同步）
+    window.dispatchEvent(
+      new CustomEvent('work:collect-changed', {
+        detail: { postId: String(poemId), collectStatus: 0 }
+      })
+    )
+
     // 从当前列表中移除该项（使用 work_info.id 匹配）
-    favorites.value = favorites.value.filter(item => item.work_info.id !== poemId)
+    favorites.value = favorites.value.filter(item => String(item.work_info.id) !== String(poemId))
     total.value--
+
+    // 再拉一次，避免“乐观移除但后端没成功/数据不同步”
+    scheduleRefresh()
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '取消收藏失败')
@@ -278,11 +311,20 @@ onMounted(() => {
   loadFavorites()
   // 添加滚动监听
   window.addEventListener('scroll', handleScroll)
+
+  // 监听其他页面的收藏/取消收藏
+  window.addEventListener('work:collect-changed', onCollectChanged)
 })
 
 onUnmounted(() => {
   // 移除滚动监听
   window.removeEventListener('scroll', handleScroll)
+
+  window.removeEventListener('work:collect-changed', onCollectChanged)
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
 })
 </script>
 
@@ -483,6 +525,12 @@ onUnmounted(() => {
               align-items: center;
               gap: 4px;
             }
+
+            .icon-wrapper {
+              display: inline-flex;
+              align-items: center;
+              font-size: 18px;
+            }
           }
         }
       }
@@ -503,6 +551,21 @@ onUnmounted(() => {
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+
+    // 轻弹：让图标风格与 ForumHome 更一致
+    .favorite-card:hover {
+      .card-stats {
+        .icon-wrapper {
+          animation: bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
       }
     }
 
