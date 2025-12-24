@@ -1036,48 +1036,51 @@ const renderMarkdown = (content: string) => {
   if (!content) return ''
 
   // 预处理：修复不规范的 markdown 格式
-  let processedContent = content
+  // breaks: true 下，单换行会被当作段内换行（<br>），因此需要用 \n\n 来“断段”
+  const normalizeSegment = (segment: string) => {
+    let s = segment.replace(/\r\n?/g, '\n')
 
-  // 0. 修复标题换行问题：确保标题标记前后有换行
-  // 处理标题前没有换行的情况：文本## 标题 → 文本\n## 标题
-  processedContent = processedContent.replace(/([^\n])(#{1,6}\s+)/g, '$1\n$2')
+    // A) 特殊处理分割线与标题粘连：---### 标题 → \n\n---\n\n### 标题
+    // 只处理 --- 后面紧跟 # 的情况（中间允许空格/Tab，但不允许换行）
+    s = s.replace(/-{3,}[\t ]*(#{1,6})/g, '\n\n---\n\n$1')
 
-  // 处理标题后没有换行的情况：## 标题文本 → ## 标题\n文本
-  // 注意：这里需要确保标题内容后面跟着的不是换行符
-  processedContent = processedContent.replace(/(#{1,6}\s+[^\n]+)([^\n])/g, (match, title, nextChar) => {
-    // 如果标题后面紧跟着非换行字符，添加换行
-    if (nextChar && nextChar !== '\n') {
-      return title + '\n' + nextChar
-    }
-    return match
-  })
+    // B) 标题前断段：不再只加 \n，而是加 \n\n
+    // 文本### 标题 → 文本\n\n### 标题
+    s = s.replace(/([^\n])([\t ]*)(#{1,6}[\t ]+)/g, '$1\n\n$3')
+    // 若标题前已有 1 个或多个换行，则统一归一为 2 个换行
+    s = s.replace(/\n+(#{1,6}[\t ]+)/g, '\n\n$1')
 
-  // 1. 修复标题：识别行首的 # 号，确保 # 与内容之间有空格
-  // 支持 1-6 级标题: #内容 → # 内容
-  processedContent = processedContent.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
+    // C) 标题语法：行首 # 与内容之间必须有空格
+    s = s.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
 
-  // 2. 修复有序列表：识别行首的数字+点号，确保点号后有空格
-  // 1.内容 → 1. 内容
-  processedContent = processedContent.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
+    // D) 标题后换行：确保标题行结束后至少有换行；并用 \n\n 拉开与正文段落
+    // 统一把标题行尾的换行归一为 “标题行 + 空行”
+    s = s.replace(/^(#{1,6}[\t ]+[^\n]+)\n?/gm, '$1\n\n')
 
-  // 3. 修复无序列表（星号）：识别行首的星号，确保星号后有空格
-  // *内容 → * 内容
-  processedContent = processedContent.replace(/^(\*)([^\s*])/gm, '$1 $2')
+    // E) 列表修复（保持原有规则）
+    s = s.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
+    s = s.replace(/^(\*)([^\s*])/gm, '$1 $2')
+    s = s.replace(/^(-)([^\s-])/gm, '$1 $2')
 
-  // 4. 修复无序列表（短横线）：识别行首的短横线，确保短横线后有空格
-  // -内容 → - 内容
-  processedContent = processedContent.replace(/^(-)([^\s-])/gm, '$1 $2')
+    // F) 其他格式清理
+    s = s.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
 
-  // 5. 修复加粗：**文本** 确保前后有空格分隔（可选优化）
-  processedContent = processedContent.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
+    // 收敛多余空行，避免越修越多（但保留段落所需的双换行）
+    s = s.replace(/\n{3,}/g, '\n\n')
 
-  // 6. 修复代码块：确保代码块标记独立一行
-  processedContent = processedContent.replace(/```(\w*)\n/g, '```$1\n')
+    return s
+  }
 
-  const rendered = md.render(processedContent)
+  // 保护代码块：避免把 ``` 内的 ### 当标题来改写
+  const parts = content.split(/(```[\s\S]*?```)/g)
+  const processedContent = parts
+    .map((part) => {
+      if (part.startsWith('```')) return part
+      return normalizeSegment(part)
+    })
+    .join('')
 
-
-  return rendered
+  return md.render(processedContent)
 }
 
 /**
@@ -1268,21 +1271,24 @@ onMounted(async () => {
         }
 
         &.active {
-          background: rgba(255, 255, 255, 0.8);
-          border-color: rgba(16, 185, 129, 0.2);
+          background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+          border-color: transparent;
           color: #059669;
-          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
           
           &::before {
             content: '';
             position: absolute;
-            left: 4px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 3px;
-            height: 16px;
+            left: 0;
+            top: 10%;
+            bottom: 10%;
+            width: 4px;
             background: #10B981;
-            border-radius: 2px;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 2px 0 8px rgba(16, 185, 129, 0.3);
+          }
+          
+          .session-title {
+            font-weight: 600;
           }
         }
 
@@ -1428,6 +1434,7 @@ onMounted(async () => {
         display: flex;
         gap: 12px;
         margin-bottom: 24px;
+        animation: messageFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 
         &.message-user {
           flex-direction: row-reverse;
@@ -1484,16 +1491,37 @@ onMounted(async () => {
           }
 
           .message-body {
-            padding: 12px 16px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            line-height: 1.8;
             word-wrap: break-word;
             max-width: 85%;
             color: #374151;
-            border: 1px solid rgba(16, 185, 129, 0.15);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
             font-family: 'Noto Serif SC', sans-serif;
+            position: relative;
+            overflow: hidden;
+
+            // 增加极淡的云纹背景
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310B981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+              pointer-events: none;
+              z-index: 0;
+            }
+
+            // 确保内容在背景之上
+            > * {
+              position: relative;
+              z-index: 1;
+            }
 
             &.streaming {
               animation: pulse 1.5s infinite;
@@ -1661,14 +1689,16 @@ onMounted(async () => {
     }
 
     .input-area {
-      border-top: 1px solid rgba(16, 185, 129, 0.2);
-      padding: 16px;
+      border-top: 1px solid rgba(16, 185, 129, 0.15);
+      padding: 20px;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.02);
 
       .input-wrapper {
         position: relative;
+        transition: all 0.3s ease;
 
         .agent-badge {
           position: absolute;
@@ -1681,10 +1711,11 @@ onMounted(async () => {
             align-items: center;
             gap: 4px;
             font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            background-color: rgba(255, 255, 255, 0.9);
-            border-color: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+            background-color: #fff;
+            border: 1px solid rgba(16, 185, 129, 0.2);
             color: #059669;
+            border-radius: 6px;
 
             .el-icon {
               font-size: 14px;
@@ -1694,16 +1725,31 @@ onMounted(async () => {
 
         :deep(.el-textarea__inner) {
           padding-right: 160px;
-          padding-left: 12px;
-          background-color: rgba(255, 255, 255, 0.6);
-          border-color: rgba(16, 185, 129, 0.2);
+          padding-left: 16px;
+          padding-top: 12px;
+          padding-bottom: 12px;
+          background-color: #F9FAFB;
+          border: 1px solid rgba(229, 231, 235, 0.8);
           color: #374151;
-          transition: all 0.3s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: 12px;
+          font-family: 'Noto Serif SC', sans-serif;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
           
+          &:hover {
+            background-color: #fff;
+            border-color: rgba(16, 185, 129, 0.3);
+          }
+
           &:focus {
+             background-color: #fff;
              border-color: #10B981;
-             box-shadow: 0 0 0 1px #10B981 inset;
-             background-color: rgba(255, 255, 255, 0.95);
+             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+          }
+          
+          &::placeholder {
+            color: #9CA3AF;
+            font-style: italic;
           }
         }
 
@@ -1773,6 +1819,17 @@ onMounted(async () => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+@keyframes messageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
