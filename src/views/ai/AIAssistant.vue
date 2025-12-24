@@ -421,7 +421,14 @@ const loadSessions = async () => {
   sessionsLoading.value = true
   try {
     const res = await getSessionList()
-    sessions.value = res.data
+    // 兼容处理：如果返回的是数组，直接使用；如果是对象且包含 list，则使用 list
+    if (Array.isArray(res.data)) {
+      sessions.value = res.data
+    } else if (res.data && Array.isArray((res.data as any).list)) {
+      sessions.value = (res.data as any).list
+    } else {
+      sessions.value = []
+    }
     
     // 如果有会话但没有选中，自动选中第一个
     if (sessions.value.length > 0 && !currentSessionId.value) {
