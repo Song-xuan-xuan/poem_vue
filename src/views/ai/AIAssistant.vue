@@ -1038,6 +1038,20 @@ const renderMarkdown = (content: string) => {
   // 预处理：修复不规范的 markdown 格式
   let processedContent = content
 
+  // 0. 修复标题换行问题：确保标题标记前后有换行
+  // 处理标题前没有换行的情况：文本## 标题 → 文本\n## 标题
+  processedContent = processedContent.replace(/([^\n])(#{1,6}\s+)/g, '$1\n$2')
+
+  // 处理标题后没有换行的情况：## 标题文本 → ## 标题\n文本
+  // 注意：这里需要确保标题内容后面跟着的不是换行符
+  processedContent = processedContent.replace(/(#{1,6}\s+[^\n]+)([^\n])/g, (match, title, nextChar) => {
+    // 如果标题后面紧跟着非换行字符，添加换行
+    if (nextChar && nextChar !== '\n') {
+      return title + '\n' + nextChar
+    }
+    return match
+  })
+
   // 1. 修复标题：识别行首的 # 号，确保 # 与内容之间有空格
   // 支持 1-6 级标题: #内容 → # 内容
   processedContent = processedContent.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
@@ -1062,12 +1076,6 @@ const renderMarkdown = (content: string) => {
 
   const rendered = md.render(processedContent)
 
-  // 调试：输出渲染前后的内容（开发环境）
-  if (import.meta.env.DEV) {
-    console.log('[Markdown Debug] 原始内容:', content.substring(0, 200))
-    console.log('[Markdown Debug] 处理后内容:', processedContent.substring(0, 200))
-    console.log('[Markdown Debug] 渲染后 HTML:', rendered.substring(0, 200))
-  }
 
   return rendered
 }
