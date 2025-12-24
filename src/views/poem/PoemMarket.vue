@@ -134,7 +134,7 @@
     <!-- 卷轴弹窗 -->
     <ScrollDialog v-model="dialogVisible" width="900px">
       <PoemDetailContent 
-        v-if="selectedPoemId" 
+        v-if="selectedPoemId !== null" 
         :poem-id="selectedPoemId" 
       />
     </ScrollDialog>

@@ -35,6 +35,15 @@ export function useLikeAndFavor() {
   const userStore = useUserStore()
   const authModalStore = useAuthModalStore()
 
+  const emitCollectChanged = (postId: string, collectStatus: number) => {
+    // 让“我的收藏”等页面能及时同步（不引入额外依赖）
+    window.dispatchEvent(
+      new CustomEvent('work:collect-changed', {
+        detail: { postId, collectStatus }
+      })
+    )
+  }
+
   // 防抖请求队列，防止重复点击
   const pendingRequests = ref(new Map<string, boolean>())
 
@@ -148,12 +157,14 @@ export function useLikeAndFavor() {
           // ElMessage.success('已取消收藏')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.collect_status, res.data.collect_count)
+          emitCollectChanged(postId, res.data.collect_status)
         } else {
           // 未收藏 -> 收藏
           const res = await collectPostAPI(postId)
           // ElMessage.success('收藏成功')
           // 用接口返回的实际值覆盖 UI
           onSuccess(res.data.collect_status, res.data.collect_count)
+          emitCollectChanged(postId, res.data.collect_status)
         }
       } catch (error: any) {
         // 6. 请求失败：回滚 UI

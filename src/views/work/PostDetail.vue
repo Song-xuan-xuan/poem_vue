@@ -61,20 +61,35 @@
             </div>
             <div class="actions">
               <el-button
-                :type="postDetail.is_liked ? 'primary' : 'default'"
-                :icon="Star"
+                class="action-btn like-btn"
+                :class="{ 'is-active': !!postDetail.is_liked }"
+                text
                 @click="handleLike"
               >
-                {{ postDetail.is_liked ? '已点赞' : '点赞' }}
-                ({{ postDetail.like_count }})
+                <div class="icon-wrapper" :class="{ 'animate-bounce': animatingIds.has(`like-${postDetail.id}`) }">
+                  <!-- 实心爱心 (已点赞) -->
+                  <svg v-if="postDetail.is_liked" viewBox="0 0 24 24" width="1.2em" height="1.2em" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                  <!-- 空心爱心 (未点赞) -->
+                  <svg v-else viewBox="0 0 24 24" width="1.2em" height="1.2em" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12.1 18.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                  </svg>
+                </div>
+                {{ postDetail.like_count }}
               </el-button>
+
               <el-button
-                :type="postDetail.is_collected ? 'warning' : 'default'"
-                :icon="Collection"
+                class="action-btn collect-btn"
+                :class="{ 'is-active': !!postDetail.is_collected }"
+                text
                 @click="handleCollect"
               >
-                {{ postDetail.is_collected ? '已收藏' : '收藏' }}
-                ({{ postDetail.collect_count }})
+                <div class="icon-wrapper" :class="{ 'animate-bounce': animatingIds.has(`collect-${postDetail.id}`) }">
+                  <el-icon v-if="postDetail.is_collected"><StarFilled /></el-icon>
+                  <el-icon v-else><Star /></el-icon>
+                </div>
+                {{ postDetail.collect_count }}
               </el-button>
             </div>
           </div>
@@ -150,7 +165,7 @@ import {
   ArrowLeft,
   Delete,
   Star,
-  Collection,
+  StarFilled,
   ChatDotRound,
   Promotion
 } from '@element-plus/icons-vue'
@@ -166,6 +181,15 @@ const router = useRouter()
 const userStore = useUserStore()
 const authModalStore = useAuthModalStore()
 const { toggleLike, toggleCollect } = useLikeAndFavor()
+
+// 动画状态管理（与 ForumHome 一致）
+const animatingIds = ref(new Set<string>())
+const triggerAnimation = (key: string) => {
+  animatingIds.value.add(key)
+  setTimeout(() => {
+    animatingIds.value.delete(key)
+  }, 600)
+}
 
 const goToUserProfile = (userId: string) => {
   router.push(`/user/profile/${userId}`)
@@ -220,6 +244,8 @@ const loadPostDetail = async () => {
 const handleLike = () => {
   if (!postDetail.value) return
 
+  triggerAnimation(`like-${postDetail.value.id}`)
+
   const currentStatus = postDetail.value.is_liked ? 1 : 0
   
   toggleLike(
@@ -240,6 +266,8 @@ const handleLike = () => {
  */
 const handleCollect = () => {
   if (!postDetail.value) return
+
+  triggerAnimation(`collect-${postDetail.value.id}`)
 
   const currentStatus = postDetail.value.is_collected ? 1 : 0
   
@@ -503,6 +531,33 @@ onMounted(() => {
         display: flex;
         gap: 12px;
 
+        .icon-wrapper {
+          display: inline-flex;
+          align-items: center;
+          margin-right: 4px;
+          font-size: 18px;
+        }
+
+        .el-button.like-btn {
+          &:hover {
+            color: #F56C6C;
+            background-color: rgba(245, 108, 108, 0.1);
+          }
+          &.is-active {
+            color: #F56C6C;
+          }
+        }
+
+        .el-button.collect-btn {
+          &:hover {
+            color: #E6A23C;
+            background-color: rgba(230, 162, 60, 0.1);
+          }
+          &.is-active {
+            color: #E6A23C;
+          }
+        }
+
         .el-button {
           font-family: 'Noto Serif SC', serif;
           
@@ -665,6 +720,16 @@ onMounted(() => {
       }
     }
   }
+}
+
+@keyframes bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+.animate-bounce {
+  animation: bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @media (max-width: 768px) {

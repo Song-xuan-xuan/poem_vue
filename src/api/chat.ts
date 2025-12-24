@@ -52,7 +52,7 @@ export const getQAList = (sessionId: string): Promise<Result<QAPair[]>> => {
  * ```
  */
 export const streamDialog = (query: string, sessionId: string): EventSource => {
-  const baseURL = import.meta.env.VITE_API_BASE_2 || 'http://localhost:8001'
+  const baseURL = import.meta.env.VITE_API_BASE_2 !== undefined ? import.meta.env.VITE_API_BASE_2 : 'http://localhost:8001'
   const userStore = useUserStore()
   const token = userStore.accessToken || localStorage.getItem('access_token')
   
@@ -90,69 +90,14 @@ export const streamDialogWithFetch = async (
   onComplete?: () => void,
   options?: { signal?: AbortSignal }
 ): Promise<void> => {
-  const isMock = import.meta.env.VITE_USE_MOCK === 'true'
   const userStore = useUserStore()
   const token = userStore.accessToken || localStorage.getItem('access_token')
   const signal = options?.signal
   
-  // Mock 模式：使用 axios 请求，然后前端模拟流式输出
-  if (isMock) {
-    try {
-      if (signal?.aborted) {
-        return
-      }
-
-      const res = await request.get<Result<{ stream: boolean; question_id: string; full_content: string }>>('/api/chat/dialog/stream', {
-        params: {
-          query,
-          session_id: sessionId
-        }
-      })
-
-      if (res.code !== 200) {
-        throw new Error(res.message || '对话失败')
-      }
-
-      const fullContent = (res.data as any)?.full_content || ''
-      
-      // 模拟流式输出：每次输出 3-8 个字符，间隔 50-100ms
-      let currentIndex = 0
-      const chunkSize = () => Math.floor(Math.random() * 6) + 3 // 3-8 字符
-      const delay = () => Math.floor(Math.random() * 51) + 50 // 50-100ms
-
-      const streamChunk = () => {
-        if (signal?.aborted) {
-          return
-        }
-
-        if (currentIndex >= fullContent.length) {
-          // 发送最终消息
-          onMessage('', true, fullContent)
-          if (onComplete) onComplete()
-          return
-        }
-
-        const size = Math.min(chunkSize(), fullContent.length - currentIndex)
-        const chunk = fullContent.substring(currentIndex, currentIndex + size)
-        currentIndex += size
-
-        const accumulated = fullContent.substring(0, currentIndex)
-        onMessage(chunk, false, accumulated)
-
-        setTimeout(streamChunk, delay())
-      }
-
-      // 开始流式输出
-      setTimeout(streamChunk, 100)
-    } catch (error) {
-      if (onError) onError(error as Error)
-      throw error
-    }
-    return
-  }
+  
 
   // 真实模式：使用 fetch 实现 SSE
-  const baseURL = import.meta.env.VITE_API_BASE_2 || 'http://localhost:8001'
+  const baseURL = import.meta.env.VITE_API_BASE_2 !== undefined ? import.meta.env.VITE_API_BASE_2 : 'http://localhost:8001'
   
   const params = new URLSearchParams({
     query,

@@ -1,7 +1,22 @@
 <template>
   <div class="ai-assistant">
+    <BambooBackground />
     <!-- 左侧：会话列表 -->
-    <div class="session-sidebar">
+    <div class="session-sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
+      <!-- 装饰：角落回纹 -->
+      <div class="sidebar-decoration top-left">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M2 2H22V22" stroke="#10B981" stroke-width="1" stroke-opacity="0.2"/>
+          <path d="M6 6H18V18" stroke="#10B981" stroke-width="1" stroke-opacity="0.15"/>
+        </svg>
+      </div>
+      <div class="sidebar-decoration bottom-right">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M22 22H2V2" stroke="#10B981" stroke-width="1" stroke-opacity="0.2"/>
+          <path d="M18 18H6V6" stroke="#10B981" stroke-width="1" stroke-opacity="0.15"/>
+        </svg>
+      </div>
+
       <div class="sidebar-header">
         <h3>会话列表</h3>
         <el-button
@@ -10,6 +25,7 @@
           :icon="Plus"
           :loading="createLoading"
           @click="handleCreateSession"
+          class="new-session-btn"
         >
           新建
         </el-button>
@@ -54,13 +70,37 @@
       </div>
     </div>
 
+    <!-- 侧边栏折叠按钮 (小脚标) -->
+    <div 
+      class="sidebar-toggle-btn" 
+      :class="{ 'is-collapsed': isSidebarCollapsed }"
+      @click="toggleSidebar"
+      title="切换侧边栏"
+    >
+      <el-icon>
+        <ArrowRight v-if="isSidebarCollapsed" />
+        <ArrowLeft v-else />
+      </el-icon>
+    </div>
+
     <!-- 右侧：聊天窗口 -->
     <div class="chat-container">
       
 
       <div v-if="!currentSessionId" class="chat-empty">
-        <el-empty description="请选择或创建一个会话开始对话">
-          <el-button type="primary" @click="handleCreateSession">创建新会话</el-button>
+        <div class="empty-illustration">
+          <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="80" fill="#F0FDF4" opacity="0.5" />
+            <path d="M60,140 Q100,60 140,140" stroke="#10B981" stroke-width="2" fill="none" opacity="0.2" />
+            <text x="100" y="110" font-family="serif" font-size="24" fill="#059669" text-anchor="middle" opacity="0.8">问道</text>
+            <text x="100" y="135" font-family="serif" font-size="14" fill="#059669" text-anchor="middle" opacity="0.6">AI 诗词助手</text>
+          </svg>
+        </div>
+        <el-empty description="请选择或创建一个会话，与 AI 共赏诗词之美">
+          <el-button type="primary" class="create-btn" @click="handleCreateSession">
+            <el-icon class="mr-1"><Plus /></el-icon>
+            开启新对话
+          </el-button>
         </el-empty>
       </div>
 
@@ -254,6 +294,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BambooBackground from '@/components/BambooBackground.vue'
 import {
   Plus,
   Edit,
@@ -269,7 +310,9 @@ import {
   Refresh,
   InfoFilled,
   TrendCharts,
-  MagicStick
+  MagicStick,
+  ArrowLeft,
+  ArrowRight
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { SessionItem, QAPair, ChatMessage } from '@/api/type'
@@ -291,6 +334,12 @@ import 'highlight.js/styles/github-dark.css'
 const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
+
+// 侧边栏折叠状态
+const isSidebarCollapsed = ref(false)
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
 
 // Markdown 渲染器（收紧HTML渲染策略）
 const md: MarkdownIt = new MarkdownIt({
@@ -421,7 +470,14 @@ const loadSessions = async () => {
   sessionsLoading.value = true
   try {
     const res = await getSessionList()
-    sessions.value = res.data
+    // 兼容处理：如果返回的是数组，直接使用；如果是对象且包含 list，则使用 list
+    if (Array.isArray(res.data)) {
+      sessions.value = res.data
+    } else if (res.data && Array.isArray((res.data as any).list)) {
+      sessions.value = (res.data as any).list
+    } else {
+      sessions.value = []
+    }
     
     // 如果有会话但没有选中，自动选中第一个
     if (sessions.value.length > 0 && !currentSessionId.value) {
@@ -978,32 +1034,88 @@ onBeforeUnmount(() => {
  */
 const renderMarkdown = (content: string) => {
   if (!content) return ''
-  
+
   // 预处理：修复不规范的 markdown 格式
-  let processedContent = content
-  
-  // 1. 修复标题：识别行首的 # 号，确保 # 与内容之间有空格
-  // 支持 1-6 级标题: #内容 → # 内容
-  processedContent = processedContent.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
-  
-  // 2. 修复有序列表：识别行首的数字+点号，确保点号后有空格
-  // 1.内容 → 1. 内容
-  processedContent = processedContent.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
-  
-  // 3. 修复无序列表（星号）：识别行首的星号，确保星号后有空格
-  // *内容 → * 内容
-  processedContent = processedContent.replace(/^(\*)([^\s*])/gm, '$1 $2')
-  
-  // 4. 修复无序列表（短横线）：识别行首的短横线，确保短横线后有空格
-  // -内容 → - 内容
-  processedContent = processedContent.replace(/^(-)([^\s-])/gm, '$1 $2')
-  
-  // 5. 修复加粗：**文本** 确保前后有空格分隔（可选优化）
-  processedContent = processedContent.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
-  
-  // 6. 修复代码块：确保代码块标记独立一行
-  processedContent = processedContent.replace(/```(\w*)\n/g, '```$1\n')
-  
+  // breaks: true 下，单换行会被当作段内换行（<br>），因此需要用 \n\n 来“断段”
+  const normalizeSegment = (segment: string) => {
+    let s = segment.replace(/\r\n?/g, '\n')
+
+    // A) 特殊处理分割线与标题粘连：---### 标题 → \n\n---\n\n### 标题
+    // 只处理 --- 后面紧跟 # 的情况（中间允许空格/Tab，但不允许换行）
+    s = s.replace(/-{3,}[\t ]*(#{1,6})/g, '\n\n---\n\n$1')
+
+    // B) 标题前断段：不再只加 \n，而是加 \n\n
+    // 文本### 标题 → 文本\n\n### 标题
+    s = s.replace(/([^\n])([\t ]*)(#{1,6}[\t ]+)/g, '$1\n\n$3')
+    // 若标题前已有 1 个或多个换行，则统一归一为 2 个换行
+    s = s.replace(/\n+(#{1,6}[\t ]+)/g, '\n\n$1')
+
+    // C) 标题语法：行首 # 与内容之间必须有空格
+    s = s.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
+
+    // D) 标题后换行（关键修复）：
+    // 1) 强制标题行后为 \n\n（breaks:true 下需要双换行才能断段）
+    // 2) 若标题行过长且把正文粘在同一行，则尝试在常见标点处分裂为「标题 + 正文」
+    s = s.replace(/^(#{1,6})[\t ]+([^\n]+)$/gm, (_m, hashes: string, line: string) => {
+      const text = String(line).trim()
+      if (!text) return `${hashes}\n\n`
+
+      const trySplitBy = (ch: string) => {
+        const idx = text.indexOf(ch)
+        if (idx > -1 && idx < text.length - 1) {
+          const title = text.slice(0, idx + 1).trim()
+          const rest = text.slice(idx + 1).trim()
+          if (rest) return `${hashes} ${title}\n\n${rest}\n\n`
+          return `${hashes} ${title}\n\n`
+        }
+        return null
+      }
+
+      // 优先用“标题: 正文 / 标题：正文 / 标题。正文 / 标题；正文”这类结构来拆
+      const preferred = ['：', ':', '。', '；', ';']
+      for (const ch of preferred) {
+        const out = trySplitBy(ch)
+        if (out) return out
+      }
+
+      // 兜底：标题行异常过长时，用第一个较靠后的顿号/逗号尝试拆分（避免整段都变标题）
+      if (text.length >= 40) {
+        const commaIdx = text.indexOf('，')
+        if (commaIdx > 10 && commaIdx < text.length - 1) {
+          const title = text.slice(0, commaIdx + 1).trim()
+          const rest = text.slice(commaIdx + 1).trim()
+          if (rest) return `${hashes} ${title}\n\n${rest}\n\n`
+          return `${hashes} ${title}\n\n`
+        }
+      }
+
+      // 正常情况：只保证标题后有双换行
+      return `${hashes} ${text}\n\n`
+    })
+
+    // E) 列表修复（保持原有规则）
+    s = s.replace(/^(\d+\.)([^\s])/gm, '$1 $2')
+    s = s.replace(/^(\*)([^\s*])/gm, '$1 $2')
+    s = s.replace(/^(-)([^\s-])/gm, '$1 $2')
+
+    // F) 其他格式清理
+    s = s.replace(/\*\*([^\s*][^*]*?)\*\*/g, '**$1**')
+
+    // 收敛多余空行，避免越修越多（但保留段落所需的双换行）
+    s = s.replace(/\n{3,}/g, '\n\n')
+
+    return s
+  }
+
+  // 保护代码块：避免把 ``` 内的 ### 当标题来改写
+  const parts = content.split(/(```[\s\S]*?```)/g)
+  const processedContent = parts
+    .map((part) => {
+      if (part.startsWith('```')) return part
+      return normalizeSegment(part)
+    })
+    .join('')
+
   return md.render(processedContent)
 }
 
@@ -1080,43 +1192,101 @@ onMounted(async () => {
   gap: 16px;
   padding: 16px;
   background: transparent;
+  position: relative;
   overflow: hidden;
   box-sizing: border-box;
 
   .session-sidebar {
     width: 280px;
-    background: rgba($color-bg-paper, 0.95);
-    border: 1px solid $color-ink-light;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(209, 250, 229, 0.5);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px -8px rgba(16, 185, 129, 0.15);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    z-index: 10;
+
+    &.collapsed {
+      width: 0;
+      padding: 0;
+      border: none;
+      margin-right: -16px; // 抵消 gap
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-decoration {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+
+      &.top-left {
+        top: 8px;
+        left: 8px;
+      }
+
+      &.bottom-right {
+        bottom: 8px;
+        right: 8px;
+      }
+    }
 
     .sidebar-header {
-      padding: 16px;
-      border-bottom: 1px solid $color-ink-light;
+      padding: 20px;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
+      z-index: 1;
 
       h3 {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
-        color: $color-ink-primary;
+        color: #1F2937;
+        font-family: 'Noto Serif SC', serif;
+        letter-spacing: 1px;
+      }
+
+      .new-session-btn {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        border: none;
+        font-family: 'Noto Serif SC', serif;
+        
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
       }
     }
 
     .session-list {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 12px;
+      position: relative;
+      z-index: 1;
+
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 2px;
+      }
 
       .session-item {
-        padding: 12px;
-        margin-bottom: 4px;
+        padding: 14px;
+        margin-bottom: 8px;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
@@ -1124,11 +1294,12 @@ onMounted(async () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: $color-ink-secondary;
+        color: #4B5563;
+        border: 1px solid transparent;
 
         &:hover {
-          background: rgba($color-ink-light, 0.1);
-          color: $color-ink-primary;
+          background: rgba(16, 185, 129, 0.05);
+          color: #059669;
 
           .session-actions {
             opacity: 1;
@@ -1136,9 +1307,25 @@ onMounted(async () => {
         }
 
         &.active {
-          background: rgba($color-ink-primary, 0.05);
-          border-left: 3px solid $color-ink-primary;
-          color: $color-ink-primary;
+          background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+          border-color: transparent;
+          color: #059669;
+          
+          &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10%;
+            bottom: 10%;
+            width: 4px;
+            background: #10B981;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 2px 0 8px rgba(16, 185, 129, 0.3);
+          }
+          
+          .session-title {
+            font-weight: 600;
+          }
         }
 
         .session-edit {
@@ -1183,14 +1370,48 @@ onMounted(async () => {
     }
   }
 
+  .sidebar-toggle-btn {
+    position: absolute;
+    left: 296px; // 侧边栏宽度(280) + padding(16)
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    color: #059669;
+    box-shadow: 2px 0 8px rgba(16, 185, 129, 0.1);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    backdrop-filter: blur(4px);
+
+    &:hover {
+      background: #ECFDF5;
+      width: 24px;
+    }
+
+    &.is-collapsed {
+      left: 16px; // 收起时贴在左侧 padding 处
+      border-left: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 0 8px 8px 0;
+    }
+  }
+
   .chat-container {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba($color-bg-paper, 0.95);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
     border-radius: 12px;
-    border: 1px solid $color-ink-light;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 8px 32px -8px rgba(16, 185, 129, 0.15);
     height: 100%;
     overflow: hidden;
 
@@ -1199,12 +1420,19 @@ onMounted(async () => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      
+      :deep(.el-empty__description) {
+        font-family: 'Noto Serif SC', serif;
+        color: #4B5563;
+      }
     }
 
     .agent-buttons {
       padding: 12px 20px;
-      border-bottom: 1px solid $color-ink-light;
-      background: transparent;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+      background: rgba(255, 255, 255, 0.4);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -1212,12 +1440,21 @@ onMounted(async () => {
 
       .el-button {
         transition: all 0.3s;
+        border-color: rgba(16, 185, 129, 0.2);
+        background: rgba(255, 255, 255, 0.6);
+
+        &:hover {
+          background: rgba(16, 185, 129, 0.05);
+          border-color: rgba(16, 185, 129, 0.4);
+          color: #059669;
+        }
 
         &.active-agent {
           font-weight: 600;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          border-color: $color-ink-primary;
-          color: $color-ink-primary;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+          border-color: #10B981;
+          color: #059669;
+          background: #ECFDF5;
         }
       }
     }
@@ -1233,6 +1470,7 @@ onMounted(async () => {
         display: flex;
         gap: 12px;
         margin-bottom: 24px;
+        animation: messageFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 
         &.message-user {
           flex-direction: row-reverse;
@@ -1245,9 +1483,10 @@ onMounted(async () => {
             }
 
             .message-body {
-              background: $color-bamboo-primary; // 竹青色
+              background: linear-gradient(135deg, #10B981 0%, #059669 100%);
               color: #fff;
-              box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+              border: none;
             }
           }
         }
@@ -1271,7 +1510,8 @@ onMounted(async () => {
             .message-sender {
               font-size: 14px;
               font-weight: 600;
-              color: $color-ink-primary;
+              color: #374151;
+              font-family: 'Noto Serif SC', serif;
             }
 
             .message-header-right {
@@ -1282,42 +1522,175 @@ onMounted(async () => {
 
             .message-time {
               font-size: 12px;
-              color: $color-ink-light;
+              color: #9CA3AF;
             }
           }
 
           .message-body {
-            padding: 12px 16px;
-            border-radius: 8px;
-            background: rgba(209, 250, 229, 0.4); // 极淡的竹青色背景
-            line-height: 1.6;
+            padding: 16px 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            line-height: 1.8;
             word-wrap: break-word;
             max-width: 85%;
-            color: $color-ink-primary;
+            color: #374151;
             border: 1px solid rgba(16, 185, 129, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            font-family: 'Noto Serif SC', sans-serif;
+            position: relative;
+            overflow: hidden;
+
+            // 增加极淡的云纹背景
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310B981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+              pointer-events: none;
+              z-index: 0;
+            }
+
+            // 确保内容在背景之上
+            > * {
+              position: relative;
+              z-index: 1;
+            }
 
             &.streaming {
               animation: pulse 1.5s infinite;
             }
 
-            :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
-               color: $color-ink-primary;
-               border-color: $color-ink-light;
+            // Markdown 基础样式
+            :deep(h1) {
+               font-size: 1.8em;
+               font-weight: 700;
+               margin: 0.67em 0;
+               color: #111827;
+               border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+               padding-bottom: 0.3em;
             }
-            
-            :deep(strong) {
-               color: $color-ink-dark;
+
+            :deep(h2) {
+               font-size: 1.5em;
+               font-weight: 700;
+               margin: 0.75em 0;
+               color: #111827;
+               border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+               padding-bottom: 0.3em;
             }
-            
+
+            :deep(h3) {
+               font-size: 1.3em;
+               font-weight: 600;
+               margin: 0.83em 0;
+               color: #111827;
+            }
+
+            :deep(h4) {
+               font-size: 1.1em;
+               font-weight: 600;
+               margin: 1em 0;
+               color: #111827;
+            }
+
+            :deep(h5), :deep(h6) {
+               font-size: 1em;
+               font-weight: 600;
+               margin: 1em 0;
+               color: #111827;
+            }
+
+            :deep(p) {
+               margin: 0.8em 0;
+               line-height: 1.7;
+            }
+
+            :deep(strong), :deep(b) {
+               color: #059669;
+               font-weight: 700;
+            }
+
+            :deep(em), :deep(i) {
+               font-style: italic;
+               color: #374151;
+            }
+
+            :deep(ul), :deep(ol) {
+               margin: 0.8em 0;
+               padding-left: 2em;
+            }
+
+            :deep(li) {
+               margin: 0.4em 0;
+               line-height: 1.6;
+            }
+
             :deep(blockquote) {
-               border-left-color: $color-ink-secondary;
-               background: rgba($color-ink-secondary, 0.1);
-               color: $color-ink-secondary;
+               border-left: 4px solid #10B981;
+               background: rgba(16, 185, 129, 0.05);
+               color: #4B5563;
+               margin: 1em 0;
+               padding: 0.5em 1em;
+               border-radius: 4px;
             }
-            
+
+            :deep(code) {
+               background: rgba(16, 185, 129, 0.08);
+               color: #059669;
+               padding: 0.2em 0.4em;
+               border-radius: 3px;
+               font-family: 'Courier New', Courier, monospace;
+               font-size: 0.9em;
+            }
+
+            :deep(pre) {
+               background: #1f2937;
+               color: #e5e7eb;
+               padding: 1em;
+               border-radius: 6px;
+               overflow-x: auto;
+               margin: 1em 0;
+
+               code {
+                  background: transparent;
+                  color: inherit;
+                  padding: 0;
+               }
+            }
+
             :deep(a) {
-               color: $color-ink-primary;
+               color: #059669;
                text-decoration: underline;
+
+               &:hover {
+                  color: #10B981;
+               }
+            }
+
+            :deep(hr) {
+               border: none;
+               border-top: 1px solid rgba(16, 185, 129, 0.2);
+               margin: 1.5em 0;
+            }
+
+            :deep(table) {
+               border-collapse: collapse;
+               width: 100%;
+               margin: 1em 0;
+
+               th, td {
+                  border: 1px solid rgba(16, 185, 129, 0.2);
+                  padding: 0.5em 0.8em;
+                  text-align: left;
+               }
+
+               th {
+                  background: rgba(16, 185, 129, 0.1);
+                  font-weight: 600;
+               }
             }
           }
 
@@ -1352,13 +1725,16 @@ onMounted(async () => {
     }
 
     .input-area {
-      border-top: 1px solid $color-ink-light;
-      padding: 16px;
+      border-top: 1px solid rgba(16, 185, 129, 0.15);
+      padding: 20px;
       flex-shrink: 0;
-      background: transparent;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.02);
 
       .input-wrapper {
         position: relative;
+        transition: all 0.3s ease;
 
         .agent-badge {
           position: absolute;
@@ -1371,10 +1747,11 @@ onMounted(async () => {
             align-items: center;
             gap: 4px;
             font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            background-color: $color-bg-paper;
-            border-color: $color-ink-light;
-            color: $color-ink-primary;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+            background-color: #fff;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #059669;
+            border-radius: 6px;
 
             .el-icon {
               font-size: 14px;
@@ -1384,14 +1761,31 @@ onMounted(async () => {
 
         :deep(.el-textarea__inner) {
           padding-right: 160px;
-          padding-left: 12px;
-          background-color: rgba(255, 255, 255, 0.5);
-          border-color: $color-ink-light;
-          color: $color-ink-primary;
+          padding-left: 16px;
+          padding-top: 12px;
+          padding-bottom: 12px;
+          background-color: #F9FAFB;
+          border: 1px solid rgba(229, 231, 235, 0.8);
+          color: #374151;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: 12px;
+          font-family: 'Noto Serif SC', sans-serif;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
           
+          &:hover {
+            background-color: #fff;
+            border-color: rgba(16, 185, 129, 0.3);
+          }
+
           &:focus {
-             border-color: $color-ink-primary;
-             box-shadow: 0 0 0 1px $color-ink-primary inset;
+             background-color: #fff;
+             border-color: #10B981;
+             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+          }
+          
+          &::placeholder {
+            color: #9CA3AF;
+            font-style: italic;
           }
         }
 
@@ -1461,6 +1855,17 @@ onMounted(async () => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+@keyframes messageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {

@@ -121,7 +121,7 @@ const poemHeaderRef = ref<HTMLElement | null>(null)
  * 加载诗词详情
  */
 const loadPoemDetail = async () => {
-  if (!props.poemId) {
+  if (props.poemId === null || props.poemId === undefined) {
     poemDetail.value = null
     return
   }

@@ -60,7 +60,9 @@ const goToLogin = () => {
   >
     <!-- Logo / 网站标题 -->
     <div class="navbar-logo">
-      <el-icon size="24"><Reading /></el-icon>
+      <span class="logo-badge" aria-hidden="true">
+        <img class="logo-img" src="/logo.png" alt="诗词社区" />
+      </span>
       <span class="logo-text">诗词社区</span>
     </div>
 
@@ -171,9 +173,41 @@ const goToLogin = () => {
     z-index: -1;
   }
 
-  .el-icon {
-    font-size: 28px;
+  .logo-badge {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    border-radius: $radius-lg;
+    isolation: isolate;
+
+    // 轻薄“磨砂徽章”：让 Logo 更融入宣纸/毛玻璃导航
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: calc(#{$radius-lg} + 6px);
+      background: rgba($color-bg-paper, 0.18);
+      border: $border-jade-light;
+      box-shadow: $shadow-glass;
+      backdrop-filter: $blur-md;
+      -webkit-backdrop-filter: $blur-md;
+      opacity: 0.9;
+      z-index: -1;
+    }
+  }
+
+  .logo-img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    display: block;
     transition: all $transition-slow cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    // 弱化/“去掉”图片自带底版的观感（特别是浅色底板）
+    mix-blend-mode: multiply;
+    filter: saturate(1.02) contrast(1.02);
   }
 
   .logo-text {
@@ -199,7 +233,7 @@ const goToLogin = () => {
       height: 120%;
     }
 
-    .el-icon {
+    .logo-img {
       transform: rotate(10deg) scale(1.1);
     }
 
