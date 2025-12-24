@@ -1053,9 +1053,45 @@ const renderMarkdown = (content: string) => {
     // C) 标题语法：行首 # 与内容之间必须有空格
     s = s.replace(/^(#{1,6})([^\s#])/gm, '$1 $2')
 
-    // D) 标题后换行：确保标题行结束后至少有换行；并用 \n\n 拉开与正文段落
-    // 统一把标题行尾的换行归一为 “标题行 + 空行”
-    s = s.replace(/^(#{1,6}[\t ]+[^\n]+)\n?/gm, '$1\n\n')
+    // D) 标题后换行（关键修复）：
+    // 1) 强制标题行后为 \n\n（breaks:true 下需要双换行才能断段）
+    // 2) 若标题行过长且把正文粘在同一行，则尝试在常见标点处分裂为「标题 + 正文」
+    s = s.replace(/^(#{1,6})[\t ]+([^\n]+)$/gm, (_m, hashes: string, line: string) => {
+      const text = String(line).trim()
+      if (!text) return `${hashes}\n\n`
+
+      const trySplitBy = (ch: string) => {
+        const idx = text.indexOf(ch)
+        if (idx > -1 && idx < text.length - 1) {
+          const title = text.slice(0, idx + 1).trim()
+          const rest = text.slice(idx + 1).trim()
+          if (rest) return `${hashes} ${title}\n\n${rest}\n\n`
+          return `${hashes} ${title}\n\n`
+        }
+        return null
+      }
+
+      // 优先用“标题: 正文 / 标题：正文 / 标题。正文 / 标题；正文”这类结构来拆
+      const preferred = ['：', ':', '。', '；', ';']
+      for (const ch of preferred) {
+        const out = trySplitBy(ch)
+        if (out) return out
+      }
+
+      // 兜底：标题行异常过长时，用第一个较靠后的顿号/逗号尝试拆分（避免整段都变标题）
+      if (text.length >= 40) {
+        const commaIdx = text.indexOf('，')
+        if (commaIdx > 10 && commaIdx < text.length - 1) {
+          const title = text.slice(0, commaIdx + 1).trim()
+          const rest = text.slice(commaIdx + 1).trim()
+          if (rest) return `${hashes} ${title}\n\n${rest}\n\n`
+          return `${hashes} ${title}\n\n`
+        }
+      }
+
+      // 正常情况：只保证标题后有双换行
+      return `${hashes} ${text}\n\n`
+    })
 
     // E) 列表修复（保持原有规则）
     s = s.replace(/^(\d+\.)([^\s])/gm, '$1 $2')

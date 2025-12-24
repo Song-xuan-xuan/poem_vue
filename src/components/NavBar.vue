@@ -60,7 +60,7 @@ const goToLogin = () => {
   >
     <!-- Logo / 网站标题 -->
     <div class="navbar-logo">
-      <el-icon size="24"><Reading /></el-icon>
+      <img class="logo-img" src="/logo.png" alt="诗词社区" />
       <span class="logo-text">诗词社区</span>
     </div>
 
@@ -171,8 +171,11 @@ const goToLogin = () => {
     z-index: -1;
   }
 
-  .el-icon {
-    font-size: 28px;
+  .logo-img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    display: block;
     transition: all $transition-slow cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
@@ -199,7 +202,7 @@ const goToLogin = () => {
       height: 120%;
     }
 
-    .el-icon {
+    .logo-img {
       transform: rotate(10deg) scale(1.1);
     }
 
