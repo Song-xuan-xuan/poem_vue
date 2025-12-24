@@ -52,7 +52,7 @@ export const getQAList = (sessionId: string): Promise<Result<QAPair[]>> => {
  * ```
  */
 export const streamDialog = (query: string, sessionId: string): EventSource => {
-  const baseURL = import.meta.env.VITE_API_BASE_2 || 'http://localhost:8001'
+  const baseURL = import.meta.env.VITE_API_BASE_2 !== undefined ? import.meta.env.VITE_API_BASE_2 : 'http://localhost:8001'
   const userStore = useUserStore()
   const token = userStore.accessToken || localStorage.getItem('access_token')
   
@@ -152,7 +152,7 @@ export const streamDialogWithFetch = async (
   }
 
   // 真实模式：使用 fetch 实现 SSE
-  const baseURL = import.meta.env.VITE_API_BASE_2 || 'http://localhost:8001'
+  const baseURL = import.meta.env.VITE_API_BASE_2 !== undefined ? import.meta.env.VITE_API_BASE_2 : 'http://localhost:8001'
   
   const params = new URLSearchParams({
     query,

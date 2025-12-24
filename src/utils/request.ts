@@ -33,13 +33,13 @@ const BASE_CONFIG = {
 
 // 创建业务服务实例（8000 端口）
 const bizService: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_1 || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_1 !== undefined ? import.meta.env.VITE_API_BASE_1 : 'http://localhost:8000',
   ...BASE_CONFIG
 })
 
 // 创建 AI 服务实例（8001 端口）
 const aiService: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_2 || 'http://localhost:8001',
+  baseURL: import.meta.env.VITE_API_BASE_2 !== undefined ? import.meta.env.VITE_API_BASE_2 : 'http://localhost:8001',
   ...BASE_CONFIG
 })
 
