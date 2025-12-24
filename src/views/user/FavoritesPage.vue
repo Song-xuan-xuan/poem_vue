@@ -117,6 +117,7 @@ import { Search, Delete, StarFilled, Clock, Loading } from '@element-plus/icons-
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FavoriteItem } from '@/api/type'
 import { getFavorites, unCollect } from '@/api/favorite'
+import { getPostDetail } from '@/api/work'
 import { useUserStore } from '@/stores/user'
 import { useAuthModalStore } from '@/stores/authModal'
 
@@ -177,16 +178,39 @@ const loadFavorites = async (append = false) => {
 
     // 新接口结构：{ items, total, page_size, total_pages }
     const items = res.data.items || []
+
+    // 兼容后端偶发“列表里出现未收藏记录”的情况：
+    // 用帖子详情接口返回的 user_collect_status 进行一次校验过滤。
+    // - 校验成功且 user_collect_status=0：从收藏页移除
+    // - 校验失败：保留（避免网络抖动导致误删）
+    const verified = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const detailRes = await getPostDetail(item.work_info.id)
+          const status = (detailRes as any)?.data?.detail?.user_collect_status
+          if (status === 0) return null
+          return item
+        } catch {
+          return item
+        }
+      })
+    )
+    const filteredItems = verified.filter((v): v is FavoriteItem => v !== null)
     
     // 追加模式：累加数据
     if (append) {
-      favorites.value = [...favorites.value, ...items]
+      const existingIds = new Set(favorites.value.map(it => String(it.work_info.id)))
+      const next = filteredItems.filter(it => !existingIds.has(String(it.work_info.id)))
+      favorites.value = [...favorites.value, ...next]
     } else {
       // 替换模式：重置数据
-      favorites.value = items
+      favorites.value = filteredItems
     }
 
-    total.value = res.data.total || 0
+    // 如果过滤掉了“未收藏”的条目，说明后端列表与当前用户收藏状态不一致。
+    // 此时用前端校验后的数量展示更符合用户预期。
+    const backendTotal = res.data.total || 0
+    total.value = filteredItems.length < items.length ? favorites.value.length : backendTotal
     pageSize.value = res.data.page_size || 10
   } catch (error: any) {
     ElMessage.error(error.message || '加载收藏列表失败')
@@ -260,14 +284,27 @@ const handleUnCollect = async (poemId: string, title: string) => {
 
     // 从当前列表中移除该项（使用 work_info.id 匹配）
     favorites.value = favorites.value.filter(item => String(item.work_info.id) !== String(poemId))
-    total.value--
+    total.value = Math.max(0, total.value - 1)
 
-    // 再拉一次，避免“乐观移除但后端没成功/数据不同步”
+    // 再拉一次，避免"乐观移除但后端没成功/数据不同步"
     scheduleRefresh()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.message || '取消收藏失败')
+    // 点击确认框的取消
+    if (error === 'cancel') return
+
+    // 兼容：后端返回"你未收藏该帖子，无需取消！"
+    // 这种情况通常意味着数据不同步，需要强制刷新列表
+    const message: string = error?.response?.data?.message || error?.message || ''
+    if (message.includes('未收藏')) {
+      ElMessage.warning('检测到数据不同步，正在刷新收藏列表...')
+      // 强制刷新列表，从服务器获取最新数据
+      currentPage.value = 1
+      await loadFavorites(false)
+      return
     }
+
+    // 其他错误信息由全局拦截器提示，这里避免重复弹窗
+    return
   }
 }
 

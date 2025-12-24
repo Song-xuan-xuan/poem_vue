@@ -1,11 +1,39 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import BambooBackground from '@/components/BambooBackground.vue'
 
 const route = useRoute()
 const isAIPage = computed(() => route.path === '/ai')
+
+// 导航栏滚动态：非 AI 页面在页面滚动时加“底”，避免内容穿透造成重叠
+const isHeaderScrolled = ref(false)
+const updateHeaderScrolled = () => {
+  // AI 页面禁用浏览器滚动（内部滚动），保持透明悬浮
+  if (isAIPage.value) {
+    isHeaderScrolled.value = false
+    return
+  }
+  isHeaderScrolled.value = window.scrollY > 8
+}
+
+onMounted(() => {
+  updateHeaderScrolled()
+  window.addEventListener('scroll', updateHeaderScrolled, { passive: true })
+})
+
+watch(
+  () => route.path,
+  () => {
+    // 路由切换时刷新一次状态，避免切页残留
+    updateHeaderScrolled()
+  }
+)
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateHeaderScrolled)
+})
 </script>
 
 <template>
@@ -16,7 +44,7 @@ const isAIPage = computed(() => route.path === '/ai')
     </div>
 
     <!-- 顶部导航栏：透明悬浮 -->
-    <header class="layout-header">
+    <header class="layout-header" :class="{ scrolled: isHeaderScrolled }">
       <NavBar />
     </header>
 
@@ -70,7 +98,10 @@ const isAIPage = computed(() => route.path === '/ai')
   
   // 滚动时可以加一点背景色 (可选，这里保持透明以显露雪景)
   &.scrolled {
-    background: rgba(255, 255, 255, 0.9);
+    background: $gradient-nav-bg;
+    backdrop-filter: $blur-md;
+    -webkit-backdrop-filter: $blur-md;
+    border-bottom: 1px solid rgba(16, 185, 129, 0.12);
     box-shadow: $shadow-md;
   }
 }
