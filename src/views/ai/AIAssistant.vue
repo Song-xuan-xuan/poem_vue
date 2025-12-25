@@ -117,7 +117,7 @@
               <el-avatar v-if="message.role === 'user'" :src="userStore.userInfo?.photo_url">
                 {{ userStore.userInfo?.name?.charAt(0) }}
               </el-avatar>
-              <el-avatar v-else :icon="ChatLineSquare" />
+              <el-avatar v-else :src="'/AI_photo.png'">AI</el-avatar>
             </div>
 
             <div class="message-content">
@@ -160,7 +160,7 @@
           <!-- 流式输出占位 -->
           <div v-if="isStreaming" class="message-item message-assistant">
             <div class="message-avatar">
-              <el-avatar :icon="ChatLineSquare" />
+              <el-avatar :src="'/AI_photo.png'">AI</el-avatar>
             </div>
             <div class="message-content">
               <div class="message-header">
@@ -303,7 +303,6 @@ import {
   Close,
   Promotion,
   VideoPause,
-  ChatLineSquare,
   Microphone,
   VideoPlay,
   Folder,

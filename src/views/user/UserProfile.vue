@@ -8,10 +8,10 @@ import {
   Edit, 
   Lock, 
   SwitchButton, 
-  Camera, 
-  Clock, 
-  Star, 
-  Collection 
+  Camera,  
+  Star,
+  StarFilled,
+  Clock,
 } from '@element-plus/icons-vue'
 import type { UploadProps, FormInstance, FormRules } from 'element-plus'
 import type { UserPoem, UserProfileData } from '@/api/type'
@@ -368,11 +368,19 @@ watch(
                 {{ formatPublishTime(work.publish_time) }}
               </span>
               <span>
-                <el-icon><Star /></el-icon>
+                <span class="icon-wrapper" aria-hidden="true">
+                  <!-- 空心爱心（与收藏页一致） -->
+                  <svg viewBox="0 0 24 24" width="1.2em" height="1.2em" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12.1 18.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                  </svg>
+                </span>
                 {{ work.like_count ?? 0 }} 点赞
               </span>
               <span>
-                <el-icon><Collection /></el-icon>
+                <span class="icon-wrapper" aria-hidden="true">
+                  <el-icon v-if="(work.collect_count ?? 0) > 0"><StarFilled /></el-icon>
+                  <el-icon v-else><Star /></el-icon>
+                </span>
                 {{ work.collect_count ?? 0 }} 收藏
               </span>
             </div>
@@ -754,6 +762,13 @@ watch(
   gap: 16px;
   font-size: 13px;
   color: #6B7280;
+
+  .icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    font-size: 18px;
+    color: #10B981;
+  }
 
   span {
     display: inline-flex;

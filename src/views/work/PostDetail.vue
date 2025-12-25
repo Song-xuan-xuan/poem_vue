@@ -10,12 +10,12 @@
           <!-- 帖子头部 -->
           <div class="post-header">
             <div class="user-section" style="cursor: pointer;" @click="goToUserProfile(String(postDetail.user_id))">
-              <el-avatar :size="50">
-                U
+              <el-avatar :size="50" :src="postDetail.author_photo_url">
+                {{ (postDetail.author_name || 'U').charAt(0) }}
               </el-avatar>
               <div class="user-info">
                 <div class="user-name">
-                  用户 {{ postDetail.user_id }}
+                  {{ postDetail.author_name || `用户 ${postDetail.user_id}` }}
                 </div>
                 <div class="post-time">{{ formatTime(postDetail.publish_time) }}</div>
               </div>
@@ -136,8 +136,8 @@
               :key="comment.comment_id"
               class="comment-item"
             >
-              <el-avatar :size="40">
-                {{ comment.user_name.charAt(0) }}
+              <el-avatar :size="40" :src="comment.user_photo_url">
+                {{ (comment.user_name || 'U').charAt(0) }}
               </el-avatar>
               <div class="comment-content">
                 <div class="comment-header">
@@ -206,9 +206,13 @@ const deleteLoading = ref(false)
 const commentContent = ref('')
 const commentLoading = ref(false)
 
-// 是否显示删除按钮（登录即可显示，由后端权限判断）
+// 是否显示删除按钮（仅作者可见）
 const isAuthor = computed(() => {
-  return userStore.isLoggedIn()
+  if (!userStore.isLoggedIn()) return false
+  if (!postDetail.value) return false
+  const currentUserId = userStore.currentUserId
+  if (currentUserId == null) return false
+  return String(currentUserId) === String(postDetail.value.user_id)
 })
 
 /**
@@ -291,6 +295,11 @@ const handleCollect = () => {
  */
 const handleDelete = async () => {
   if (!postDetail.value) return
+
+  if (!isAuthor.value) {
+    ElMessage.error('无权限删除该帖子')
+    return
+  }
 
   try {
     await ElMessageBox.confirm(

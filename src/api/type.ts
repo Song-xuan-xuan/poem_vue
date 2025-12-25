@@ -263,6 +263,7 @@ export interface WorkComment {
   comment_id: string
   user_id: string
   user_name: string
+  user_photo_url?: string
   content: string
   comment_time: number
 }
@@ -275,6 +276,8 @@ export interface WorkDetail {
   title: string
   content: string
   user_id: string
+  author_name?: string
+  author_photo_url?: string
   publish_time: number
   like_count: number
   collect_count: number

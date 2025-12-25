@@ -1,9 +1,24 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { getUserInfo } from '@/api/user'
 import type { UserProfileData, TokenData } from '@/api/type'
+
+const decodeJwtPayload = (token: string): any | null => {
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+    const json = atob(padded)
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
 
 /**
  * 用户状态管理 Store (Setup Store 写法)
@@ -112,6 +127,27 @@ export const useUserStore = defineStore('user', () => {
     return !!accessToken.value
   }
 
+  /**
+   * 当前用户ID（从 access_token 的 JWT payload 解析）
+   *
+   * 说明：/api/user/info 不返回 user_id，因此不能依赖 userInfo.id。
+   * 这里兼容不同后端字段命名（user_id / id / uid / sub）。
+   */
+  const currentUserId = computed<string | number | null>(() => {
+    if (!accessToken.value) return null
+    const payload = decodeJwtPayload(accessToken.value)
+    if (!payload) return null
+
+    return (
+      payload.user_id ??
+      payload.userId ??
+      payload.uid ??
+      payload.id ??
+      payload.sub ??
+      null
+    )
+  })
+
   // 初始化 store
   initStore()
 
@@ -127,6 +163,7 @@ export const useUserStore = defineStore('user', () => {
     setUserInfo,
     fetchProfile,
     logout,
-    isLoggedIn
+    isLoggedIn,
+    currentUserId
   }
 })
